@@ -1,0 +1,1 @@
+/usr/bin/cc    CMakeFiles/bench.dir/src/chat.c.o  -o bench 
