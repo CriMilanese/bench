@@ -12,13 +12,11 @@
 void func(int sockfd)
 {
 	char buff[MAX];
-	int n;
-	int fill_buff = 1;
 	while(1){
 		bzero(buff, sizeof(buff));
-		printf("Enter the string : ");
-		n = 0;
-		while ((buff[n++] = getchar()) != '\n');
+		while(read(sockfd, buff, sizeof(buff))<MAX);
+		// printf("Enter the string : ");
+		// while ((buff[n++] = getchar()) != '\n');
 //		if(fill_buff){
 //			bzero(buff,  sizeof(buff));
 //			for(long i=0; i<MAX; i++){
@@ -26,14 +24,12 @@ void func(int sockfd)
 //			}
 //			fill_buff = 0;
 //		}
-		write(sockfd, buff, sizeof(buff));
-		bzero(buff, sizeof(buff));
-		while(read(sockfd, buff, sizeof(buff))<MAX);
-		printf("From Server : %s", buff);
 		if ((strncmp(buff, "exit", 4)) == 0) {
 			printf("Client Exit...\n");
 			break;
 		}
+		printf("echoing message back\n");
+		write(sockfd, buff, sizeof(buff));
 	}
 }
 
