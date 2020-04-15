@@ -1,49 +1,65 @@
 
 #include <stdio.h>
-#include <netdb.h>
 #include <stdlib.h>
+#include <netdb.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/time.h>
-#define MAX 80
+#define MAX 1024
 #define PORT 8080
 #define SA struct sockaddr
+#define TRIALS 100
 
-// Function designed for chat between client and server.
+/*
+*  This function is designed to send data to another device and read
+*  the respose back.
+*  PARAM: file descriptor of opened socket
+*/
 void func(int sockfd)
 {
-    char buff[MAX];
-    int n;
-    float elapsed;
+    char *buff = malloc(MAX * sizeof(char));
+    int *elapsed = malloc(TRIALS * sizeof(int));
+    int avg_rtt = 0;
+    int n = 0;
     struct timeval curr_tm, prev_tm;
-    // infinite loop for chat
-    while(1){
-        printf("waiting for a message..\n");
-        bzero(buff, MAX);
+
+    // init buffers with some bytes
+    memset(buff, 0, MAX*sizeof(char));
+    memset(elapsed, 0, TRIALS*sizeof(int));
+
+    // the +1 is to end the connection
+    while(n < (TRIALS + 1)){
+
+        // the last iteration we break early by sending an exit message
+        // to the client, which will terminate its loop too
+        if(n == TRIALS){
+          memset(buff, 1, MAX*sizeof(char));
+          write(sockfd, buff, MAX*sizeof(char));
+          printf("Server Exit...\n");
+          break;
+        }
+
+        gettimeofday(&prev_tm, NULL);
+        // and send that buffer to client
+        write(sockfd, buff, MAX*sizeof(char));
+
+        printf("trial number %d, message sent\n", n);
+        // read the message from client and copy it in buffer
+        while(read(sockfd, buff, MAX*sizeof(char))<=0);
 
         gettimeofday(&curr_tm, NULL);
-        // read the message from client and copy it in buffer
-        read(sockfd, buff, sizeof(buff));
+
+        elapsed[n] = ((curr_tm.tv_usec - prev_tm.tv_usec));
+        avg_rtt += elapsed[n];
         // print buffer which contains the client contents
-        printf("From client: %s", buff);
-        printf("\t To client : ");
-        bzero(buff, MAX);
-        n = 0;
-        // copy server message in the buffer
-        while ((buff[n++] = getchar()) != '\n');
-
-        // and send that buffer to client
-        write(sockfd, buff, sizeof(buff));
-
-        // if msg contains "Exit" then server exit and chat ended.
-        if (strncmp("exit", buff, 4) == 0) {
-            printf("Server Exit...\n");
-            break;
-        }
+        printf("back from client in: %d us\n", elapsed[n]);
+        n++;
     }
+    free(buff);
+    free(elapsed);
+    printf("the average round trip time is: %f us\n", (float)avg_rtt/TRIALS);
 }
 
-// Driver function
 int main()
 {
     int sockfd, connfd, len;
