@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [ "$1" == "server" ]
+then
+  cd build
+  cmake ../
+  make
+elif [ "$1" == "client" ]
+then
+  cd ../client/build
+  cmake ../
+  make
+else
+  echo 'missing argument'
+fi
