@@ -5,32 +5,29 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#define MAX 50
+#define MAX 1024
 #define PORT 8080
 #define SA struct sockaddr
 
 void func(int sockfd)
 {
-	char buff[MAX];
+	char *buff = malloc(MAX * sizeof(char));
+	memset(buff, 0, MAX*sizeof(char));
+	int bytes_received = 0;
 	while(1){
-		bzero(buff, sizeof(buff));
-		while(read(sockfd, buff, sizeof(buff))<MAX);
-		// printf("Enter the string : ");
-		// while ((buff[n++] = getchar()) != '\n');
-//		if(fill_buff){
-//			bzero(buff,  sizeof(buff));
-//			for(long i=0; i<MAX; i++){
-//				buff[i] = 'c';
-//			}
-//			fill_buff = 0;
-//		}
-		if ((strncmp(buff, "exit", 4)) == 0) {
+
+		//THIS MIGHT NOT WAIT
+		bytes_received = read(sockfd, buff, MAX*sizeof(char));
+		printf("[DEBUG] size received : %d;\n", bytes_received);
+
+		if (buff[0] == 1) {
 			printf("Client Exit...\n");
 			break;
 		}
-		printf("echoing message back\n");
-		write(sockfd, buff, sizeof(buff));
+
+		write(sockfd, buff, MAX*sizeof(char));
 	}
+	free(buff);
 }
 
 int main()
@@ -63,6 +60,8 @@ int main()
 
 	// function for chat
 	func(sockfd);
+
+	printf("connection closed..\n");
 
 	// close the socket
 	close(sockfd);
