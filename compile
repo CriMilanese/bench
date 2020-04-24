@@ -1,0 +1,30 @@
+#!/bin/bash
+
+function server_side(){
+  cd server/build
+  cmake ../
+  make
+  mv bench ../
+}
+
+function client_side(){
+  cd client/build
+  cmake ../
+  make
+  mv bench ../
+}
+
+if [ "$1" == "server" ]
+then
+    server_side
+elif [ "$1" == "client" ]
+then
+    client_side
+elif [ "$1" == "both" ]
+then
+    server_side
+    cd ../../
+    client_side
+else
+  echo 'missing or wrong argument'
+fi
