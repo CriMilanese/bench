@@ -1,10 +1,10 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <netdb.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <arpa/inet.h>
 #define MAX 1024
 #define PORT 8080
 #define SA struct sockaddr
@@ -18,7 +18,7 @@
 void func(int sockfd)
 {
     char *buff = malloc(MAX * sizeof(char));
-    int *elapsed = malloc(TRIALS * sizeof(int));
+    long *elapsed = malloc(TRIALS * sizeof(long));
     int avg_rtt = 0;
     int n = 0;
     struct timeval curr_tm, prev_tm;
@@ -49,10 +49,8 @@ void func(int sockfd)
 
         gettimeofday(&curr_tm, NULL);
 
-        elapsed[n] = ((curr_tm.tv_usec - prev_tm.tv_usec));
+        elapsed[n] = ((curr_tm.tv_sec*1e6 + curr_tm.tv_usec) - (prev_tm.tv_sec*1e6 + prev_tm.tv_usec));
         avg_rtt += elapsed[n];
-        // print buffer which contains the client contents
-        printf("back from client in: %d us\n", elapsed[n]);
         n++;
     }
     free(buff);
@@ -63,18 +61,35 @@ void func(int sockfd)
 int main()
 {
     int sockfd, connfd, len;
-    struct sockaddr_in servaddr, cli;
+    char client_ip[INET_ADDRSTRLEN];
+    /* master file descriptor list */
+    fd_set master;
+    // temp file descriptor list for select()
+    fd_set read_fds;
+    struct sockaddr_in servaddr, client;
+
+    // clear the master and temp sets
+    FD_ZERO(&master);
+    FD_ZERO(&read_fds);
+
+
 
     // socket create and verification
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd == -1) {
         printf("socket creation failed...\n");
-        return 0;
+        return EXIT_SUCCESS;
     }
     else
         printf("Socket successfully created..\n");
     bzero(&servaddr, sizeof(servaddr));
+    /*"address already in use" error message */
 
+    if(setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1){
+      fprintf(stderr, "Server-setsockopt() error");
+      return EXIT_FAILURE;
+    }
+    }
     // assign IP, PORT
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -83,7 +98,7 @@ int main()
     // Binding newly created socket to given IP and verification
     if ((bind(sockfd, (SA*)&servaddr, sizeof(servaddr))) != 0) {
         printf("socket bind failed...\n");
-        return 0;
+        return EXIT_SUCCESS;
     }
     else
         printf("Socket successfully binded..\n");
@@ -91,24 +106,28 @@ int main()
     // Now server is ready to listen and verification
     if ((listen(sockfd, 5)) != 0) {
         printf("Listen failed...\n");
-        return 0;
+        return EXIT_SUCCESS;
     }
     else
         printf("Server listening..\n");
-    len = sizeof(cli);
+
+    len = sizeof(client);
 
     // Accept the data packet from client and verification
-    connfd = accept(sockfd, (SA*)&cli, &len);
-    if (connfd < 0) {
+    while(1){
+      connfd = accept(sockfd, (SA*)&client, &len);
+      if (connfd < 0) {
         printf("server accept failed...\n");
-        return 0;
+        return EXIT_SUCCESS;
+      }
+      else
+      inet_ntop(AF_INET, &(client.sin_addr), client_ip, INET_ADDRSTRLEN);
+      printf("server accept the client at IP: %s\n", client_ip);
+
+      // Function for chatting between client and server
+      func(connfd);
     }
-    else
-        printf("server accept the client...\n");
 
-    // Function for chatting between client and server
-    func(connfd);
-
-    // After chatting close the socket
+    // close the socekt when done with all clients
     close(sockfd);
 }

@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
+// #include <sys/socket.h>
 #include <unistd.h>
 #include <arpa/inet.h>
 #define MAX 1024
@@ -13,12 +13,9 @@ void func(int sockfd)
 {
 	char *buff = malloc(MAX * sizeof(char));
 	memset(buff, 0, MAX*sizeof(char));
-	int bytes_received = 0;
 	while(1){
 
-		//THIS MIGHT NOT WAIT
-		bytes_received = read(sockfd, buff, MAX*sizeof(char));
-		printf("[DEBUG] size received : %d;\n", bytes_received);
+		read(sockfd, buff, MAX*sizeof(char));
 
 		if (buff[0] == 1) {
 			printf("Client Exit...\n");
@@ -33,9 +30,9 @@ void func(int sockfd)
 int main()
 {
 	int sockfd, connfd;
-	struct sockaddr_in servaddr, cli;
+	struct sockaddr_in servaddr;
 
-	// socket create and varification
+	// socket create and verification
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd == -1) {
 		printf("socket creation failed...\n");
