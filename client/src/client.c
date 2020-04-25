@@ -49,7 +49,7 @@ int main()
 	// connect the client socket to server socket
 	if (connect(sockfd, (SA*)&servaddr, sizeof(servaddr)) != 0) {
 		printf("connection with the server failed...\n");
-		exit(0);
+		return EXIT_FAILURE;
 	}
 	else
 		printf("connected to the server..\n");
@@ -61,5 +61,5 @@ int main()
 
 	// close the socket
 	close(sockfd);
-  return 0;
+  return EXIT_SUCCESS;
 }

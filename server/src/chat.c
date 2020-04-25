@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <arpa/inet.h>
-#define MAX 512
+#define MAX 1024
 #define PORT 8080
 #define SA struct sockaddr
 #define TRIALS 100
@@ -117,14 +117,15 @@ int main()
     /* add the listening file descriptor to the master set */
     /* keep track of the biggest file descriptor */
     maxfd = master_socket_fd; /* so far, it's this one*/
-    printf("max_fd is: %d\n", maxfd);
+    // printf("max_fd is: %d\n", maxfd);
 
     // Accept the data packet from client and verification
     while(1){
       struct timeval expiration = {TIMEOUT, 0};
       /* copy fds over, because select is disrupting */
+      int tmp_maxfd = maxfd;
       memcpy(&read_fds, &master, sizeof(master));
-      if(rt = select(maxfd+1, &read_fds, NULL, NULL, &expiration) == -1){
+      if(rt = select(tmp_maxfd+1, &read_fds, NULL, NULL, NULL) == -1){
         printf("Server-select() failed..\n");
         return EXIT_FAILURE;
       // } else if (rt == 0) {
@@ -133,7 +134,7 @@ int main()
       }
 
       // check the available number of fds
-      printf("[DEBUG] maxfd is: %d\n", rt);
+      printf("[DEBUG] rt is: %d\n", rt);
 
       /*run through the existing connections looking for data to be read*/
       for(int i = 0; i <= maxfd; i++){
@@ -149,7 +150,7 @@ int main()
               /* keep track of the maximum */
               maxfd = newfd;
             }
-            printf("New connection from %s on socket %d\n", inet_ntoa(client.sin_addr), newfd);
+            // printf("New connection from %s on socket %d\n", inet_ntoa(client.sin_addr), newfd);
             if(write(newfd, welcome_msg, strlen(welcome_msg))<0){
                 printf("welcome message failed..\n");
             }
