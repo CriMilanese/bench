@@ -5,10 +5,12 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <arpa/inet.h>
-#define MAX 1024
+#define MAX 512
 #define PORT 8080
 #define SA struct sockaddr
 #define TRIALS 100
+#define BACKLOG 5
+#define TIMEOUT 10  // sec
 
 /*
 *  This function is designed to send data to another device and read
@@ -35,7 +37,7 @@ void func(int sockfd)
         if(n == TRIALS){
           memset(buff, 1, MAX*sizeof(char));
           write(sockfd, buff, MAX*sizeof(char));
-          printf("Server Exit...\n");
+          printf("test done..\n");
           break;
         }
 
@@ -43,7 +45,7 @@ void func(int sockfd)
         // and send that buffer to client
         write(sockfd, buff, MAX*sizeof(char));
 
-        printf("trial number %d, message sent\n", n);
+        // printf("trial number %d, message sent\n", n);
         // read the message from client and copy it in buffer
         while(read(sockfd, buff, MAX*sizeof(char))<=0);
 
@@ -60,74 +62,108 @@ void func(int sockfd)
 
 int main()
 {
-    int sockfd, connfd, len;
-    char client_ip[INET_ADDRSTRLEN];
-    /* master file descriptor list */
+    int master_socket_fd, len, maxfd, newfd, rt;
+
+    struct sockaddr_in servaddr, client;
+
+    char *welcome_msg = "welcome to this server";
+    int opt = 1;
+
     fd_set master;
     // temp file descriptor list for select()
     fd_set read_fds;
-    struct sockaddr_in servaddr, client;
-
     // clear the master and temp sets
     FD_ZERO(&master);
     FD_ZERO(&read_fds);
-
-
-
     // socket create and verification
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd == -1) {
+    master_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (master_socket_fd == -1) {
         printf("socket creation failed...\n");
         return EXIT_SUCCESS;
     }
     else
         printf("Socket successfully created..\n");
     bzero(&servaddr, sizeof(servaddr));
-    /*"address already in use" error message */
 
-    if(setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1){
-      fprintf(stderr, "Server-setsockopt() error");
+    /*"address already in use" error message */
+    if(setsockopt(master_socket_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(int)) == -1){
+      printf("Server-setsockopt() failed\n");
       return EXIT_FAILURE;
     }
-    }
+
     // assign IP, PORT
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     servaddr.sin_port = htons(PORT);
 
     // Binding newly created socket to given IP and verification
-    if ((bind(sockfd, (SA*)&servaddr, sizeof(servaddr))) != 0) {
+    if ((bind(master_socket_fd, (SA*)&servaddr, sizeof(servaddr))) != 0) {
         printf("socket bind failed...\n");
-        return EXIT_SUCCESS;
+        return EXIT_FAILURE;
     }
     else
         printf("Socket successfully binded..\n");
 
     // Now server is ready to listen and verification
-    if ((listen(sockfd, 5)) != 0) {
+    if ((listen(master_socket_fd, BACKLOG)) != 0) {
         printf("Listen failed...\n");
-        return EXIT_SUCCESS;
+        return EXIT_FAILURE;
     }
     else
         printf("Server listening..\n");
 
+    FD_SET(master_socket_fd, &master);
     len = sizeof(client);
+    /* add the listening file descriptor to the master set */
+    /* keep track of the biggest file descriptor */
+    maxfd = master_socket_fd; /* so far, it's this one*/
+    printf("max_fd is: %d\n", maxfd);
 
     // Accept the data packet from client and verification
     while(1){
-      connfd = accept(sockfd, (SA*)&client, &len);
-      if (connfd < 0) {
-        printf("server accept failed...\n");
-        return EXIT_SUCCESS;
+      struct timeval expiration = {TIMEOUT, 0};
+      /* copy fds over, because select is disrupting */
+      memcpy(&read_fds, &master, sizeof(master));
+      if(rt = select(maxfd+1, &read_fds, NULL, NULL, &expiration) == -1){
+        printf("Server-select() failed..\n");
+        return EXIT_FAILURE;
+      // } else if (rt == 0) {
+      //   printf("Listening has timed out\n");
+      //   return EXIT_SUCCESS;
       }
-      else
-      inet_ntop(AF_INET, &(client.sin_addr), client_ip, INET_ADDRSTRLEN);
-      printf("server accept the client at IP: %s\n", client_ip);
 
-      // Function for chatting between client and server
-      func(connfd);
+      // check the available number of fds
+      printf("[DEBUG] maxfd is: %d\n", rt);
+
+      /*run through the existing connections looking for data to be read*/
+      for(int i = 0; i <= maxfd; i++){
+        if(FD_ISSET(i, &read_fds)){
+          if(i == master_socket_fd){
+             /* handle new connections */
+            if((newfd = accept(master_socket_fd, (struct sockaddr *)&client, &len)) == -1){
+              printf("Server-accept() failed..\n");
+              return EXIT_FAILURE;
+            }
+            FD_SET(newfd, &master); /* add to master set */
+            if(newfd > maxfd){
+              /* keep track of the maximum */
+              maxfd = newfd;
+            }
+            printf("New connection from %s on socket %d\n", inet_ntoa(client.sin_addr), newfd);
+            if(write(newfd, welcome_msg, strlen(welcome_msg))<0){
+                printf("welcome message failed..\n");
+            }
+          } else {
+            // data coming from an existig connection, we need to handle the message
+            func(i);
+            close(i);
+            FD_CLR(i, &master);
+          }
+        }
+      }
     }
 
-    // close the socekt when done with all clients
-    close(sockfd);
+    // close the socket when done with all clients
+    close(master_socket_fd);
+    return EXIT_SUCCESS;
 }

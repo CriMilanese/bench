@@ -18,7 +18,6 @@ void func(int sockfd)
 		read(sockfd, buff, MAX*sizeof(char));
 
 		if (buff[0] == 1) {
-			printf("Client Exit...\n");
 			break;
 		}
 
