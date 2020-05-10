@@ -1,17 +1,18 @@
 #!/bin/bash
 
 function server_side(){
-  cd server/build;
+
+  cd ./server/build;
   cmake ../;
   make;
-  mv bench ../;
+  mv server ../;
 }
 
 function client_side(){
-  cd client/build;
+  cd ./client/build;
   cmake ../;
   make;
-  mv bench ../;
+  mv client ../;
 }
 
 if [ "$1" == "server" ]

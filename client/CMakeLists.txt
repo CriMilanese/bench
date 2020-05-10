@@ -4,19 +4,17 @@ cmake_minimum_required(VERSION 3.10)
 # set the env_var PROJECT_NAME to the version given here
 project(bench VERSION 1.0)
 
-# not mandatory
-enable_language(C)
-
-# set hosting system and processor
-set(CMAKE_SYSTEM_NAME Linux)
-set(CMAKE_SYSTEM_PROCESSOR arm)
-
-# set the right compiler for cross-compilation to ARM architecture
-set(CMAKE_C_COMPILER /usr/bin/arm-linux-gnueabi-gcc)
+# add thread library, which has to be linked at compile time
+find_package(Threads)
 
 # add the executable
-add_executable(bench src/client.c)
+add_executable(client ${PROJECT_SOURCE_DIR}/src/client.c)
+
+# link the thread library with executable
+target_link_libraries(client ${CMAKE_THREAD_LIBS_INIT})
+
+# path to function definition
+target_sources(client PUBLIC ${PROJECT_SOURCE_DIR}/inc/queue.c)
 
 # path to search for include files
-# target_source_directories(socket "${PROJECT_SOURCE_DIR}/src")
-include_directories(bench PUBLIC "${PROJECT_SOURCE_DIR}/client/inc")
+include_directories(PUBLIC ${PROJECT_SOURCE_DIR}/inc)

@@ -4,12 +4,17 @@ cmake_minimum_required(VERSION 3.10)
 # set the env_var PROJECT_NAME to the version given here
 project(bench VERSION 1.0)
 
-# configure header file to pass the version number
-# configure_file(TutorialConfig.h.in TutorialConfig.h)
+# add thread library, which has to be linked at compile time
+find_package(Threads)
 
 # add the executable
-add_executable(bench src/chat.c)
+add_executable(server ${PROJECT_SOURCE_DIR}/src/chat.c)
+
+# link the thread library with executable
+target_link_libraries(server ${CMAKE_THREAD_LIBS_INIT})
+
+# path to function definition
+target_sources(server PUBLIC ${PROJECT_SOURCE_DIR}/inc/queue.c)
 
 # path to search for include files
-# target_source_directories(socket "${PROJECT_SOURCE_DIR}/src")
-include_directories(bench PUBLIC "${PROJECT_SOURCE_DIR}/server/inc")
+include_directories(PUBLIC ${PROJECT_SOURCE_DIR}/inc)

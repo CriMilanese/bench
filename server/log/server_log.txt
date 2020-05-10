@@ -1,0 +1,12 @@
+[DEBUG] thread is running
+[DEBUG] thread is running
+[DEBUG] thread is running
+[DEBUG] thread is running
+[DEBUG] thread is running
+[DEBUG] thread is running
+[DEBUG] thread is running
+[DEBUG] thread is running
+[DEBUG] thread is running
+[DEBUG] thread is running
+INFO: testing 192.168.1.146 with fd: 5
+time has expired....
