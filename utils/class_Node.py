@@ -15,11 +15,11 @@ class Node():
 
     def server_up(self):
         self.node_status = status(0);
-        self.process = Popen("ssh "+self.user+"@"+self.ip+" './bench/server/bench'", shell=True);
+        self.process = Popen("ssh "+self.user+"@"+self.ip+" './bench/server/server'", shell=True);
 
     def client_up(self, server):
         self.node_status = status(1);
-        self.process = Popen("ssh "+self.user+"@"+self.ip+" './bench/client/bench "+server+"'", shell=True);
+        self.process = Popen("ssh "+self.user+"@"+self.ip+" './bench/client/client "+server+"'", shell=True);
 
     # this is highly dependent on OS because of the path used
     def distribute_sw(self):
@@ -37,11 +37,13 @@ class Node():
             print("secure copy failed..")
         if(call("scp -r ../bench/client/src "+self.user+"@"+self.ip+":~/bench/client", shell=True)!=0):
             print("secure copy failed..")
-        if(call("scp ../bench/compile "+self.user+"@"+self.ip+":~/bench", shell=True)!=0):
+        if(call("scp -r ../bench/client/log "+self.user+"@"+self.ip+":~/bench/client", shell=True)!=0):
             print("secure copy failed..")
         if(call("scp ../bench/client/CMakeLists.txt "+self.user+"@"+self.ip+":~/bench/client", shell=True)!=0):
             print("secure copy failed..")
         if(call("scp ../bench/server/CMakeLists.txt "+self.user+"@"+self.ip+":~/bench/server", shell=True)!=0):
+            print("secure copy failed..")
+        if(call("scp ../bench/compile "+self.user+"@"+self.ip+":~/bench", shell=True)!=0):
             print("secure copy failed..")
         if(call("ssh "+self.user+"@"+self.ip+" 'cd bench; ./compile both'", shell=True)!=0):
             print("remote compilation failed")
