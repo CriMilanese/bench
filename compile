@@ -6,6 +6,7 @@ function server_side(){
   cmake ../;
   make;
   mv server ../;
+  rm ../log/*;
 }
 
 function client_side(){
@@ -13,6 +14,7 @@ function client_side(){
   cmake ../;
   make;
   mv client ../;
+  rm ../log/*;
 }
 
 if [ "$1" == "server" ]
