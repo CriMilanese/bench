@@ -44,9 +44,9 @@ int *enqueue(struct Queue* queue, int item){
 }
 
 // Function to remove an item from queue.
-int *dequeue(struct Queue* queue){
+int dequeue(struct Queue* queue){
   if (is_empty(queue))
-      return NULL;
+      return 0;
   int *item = queue->front;
 
   // make it circular
@@ -57,7 +57,7 @@ int *dequeue(struct Queue* queue){
   }
 
   queue->size = queue->size - 1;
-  return item;
+  return *item;
 }
 
 // Function to get front of queue
