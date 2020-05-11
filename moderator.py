@@ -36,6 +36,7 @@ def main(target):
     # make sure each plays the server once
     if(target=="both" or target=="play"):
         for node in nodes:
+            print("server is now: "+node.ip)
             for host in nodes:
                 host.target(node.ip)
     # node.listen()
