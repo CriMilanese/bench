@@ -2,29 +2,44 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-// #include <sys/socket.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+
 #define MAX 1024
 #define PORT 8080
 #define SA struct sockaddr
 #define MAX_TRIALS 10
+#define TESTS 10
 
-void func(int sockfd)
+void func(int sockfd, FILE *logfd)
 {
 	char *buff = malloc(MAX * sizeof(char));
+	// long *elapsed = malloc(TESTS * sizeof(long));
+	struct timeval curr_tm, prev_tm;
+  long sum_rtt = 0;
+	int n = 0;
 	memset(buff, 0, MAX*sizeof(char));
-	while(1){
+	// memset(elapsed, 0, TESTS*sizeof(char));
+	while(n <= TESTS){
 
-		read(sockfd, buff, MAX*sizeof(char));
-
-		if (buff[0] == 1) {
+		if (n == TESTS) {
+			memset(buff, 1, MAX*sizeof(char));
+      send(sockfd, buff, MAX*sizeof(char), 0);
 			break;
 		}
+		gettimeofday(&prev_tm, NULL);
+		send(sockfd, buff, MAX*sizeof(char), 0);
 
-		write(sockfd, buff, MAX*sizeof(char));
+		while(recv(sockfd, buff, MAX*sizeof(char), 0)<0);
+    gettimeofday(&curr_tm, NULL);
+
+		sum_rtt += ((curr_tm.tv_sec*1e6 + curr_tm.tv_usec) - (prev_tm.tv_sec*1e6 + prev_tm.tv_usec));
+		n++;
 	}
+	// free(elapsed);
 	free(buff);
+	fprintf(logfd, "avg trip time %.2f\n", (float)sum_rtt/TESTS);
 }
 
 
@@ -34,16 +49,17 @@ int main(int argc, char const *argv[])
 	struct sockaddr_in servaddr;
 	FILE *logfd;
 
-	logfd = fopen("bench/client/log/client_log.txt", "w");
+	if(argc < 2){
+		fprintf(logfd, "ERROR: target server ip missing\n");
+		return EXIT_FAILURE;
+	}
+
+	logfd = fopen("bench/client/log/client_log.txt", "a+");
 	if(logfd == NULL){
 		printf("CLIENT LOG FILE FAILED\n");
 		return EXIT_FAILURE;
 	}
 
-	if(argc < 2){
-		fprintf(logfd, "ERROR: target server ip missing\n");
-		return EXIT_FAILURE;
-	}
 	// socket create and verification
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd == -1) {
@@ -65,14 +81,14 @@ int main(int argc, char const *argv[])
 			fclose(logfd);
 			return EXIT_FAILURE;
 		}
-		sleep(1);
+		sleep(5);
 		fprintf(logfd,"connection with the server failed...\n");
 		trials++;
 	}
 
 
 	// function for chat
-	func(sockfd);
+	func(sockfd, logfd);
 	fclose(logfd);
 	// close the socket
 	close(sockfd);
