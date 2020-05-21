@@ -25,7 +25,7 @@ pthread_cond_t cond_var = PTHREAD_COND_INITIALIZER;
 /*
 *  This function is designed to send data to another device and read
 *  the response back.
-*  PARAM: file descriptor of opened socket
+*  PARAM: file descriptor of opened sockets
 */
 void communicate(int *sockfd, FILE *logfd){
   // int curr_fd = *sockfd;

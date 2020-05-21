@@ -1,7 +1,0 @@
-INFO: testing 192.168.1.146 with fd: 5
-INFO: testing 192.168.1.146 with fd: 6
-INFO: testing 192.168.1.146 with fd: 7
-INFO: testing 192.168.1.146 with fd: 8
-INFO: testing 192.168.1.146 with fd: 9
-INFO: testing 192.168.1.146 with fd: 10
-time has expired....
