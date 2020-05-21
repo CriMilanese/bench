@@ -12,7 +12,7 @@
 #define MAX_TRIALS 10
 #define TESTS 10
 
-void func(int sockfd, FILE *logfd)
+float func(int sockfd)
 {
 	char *buff = malloc(MAX * sizeof(char));
 	// long *elapsed = malloc(TESTS * sizeof(long));
@@ -39,13 +39,15 @@ void func(int sockfd, FILE *logfd)
 	}
 	// free(elapsed);
 	free(buff);
-	fprintf(logfd, "avg trip time %.2f\n", (float)sum_rtt/TESTS);
+	// fprintf(logfd, "avg trip time %.2f us\n", (float)sum_rtt/TESTS);
+	return (float)sum_rtt/TESTS;
 }
 
 
 int main(int argc, char const *argv[])
 {
 	int sockfd, connfd;
+  float result = 0;
 	struct sockaddr_in servaddr;
 	FILE *logfd;
 
@@ -81,14 +83,15 @@ int main(int argc, char const *argv[])
 			fclose(logfd);
 			return EXIT_FAILURE;
 		}
-		sleep(5);
+		sleep(3);
 		fprintf(logfd,"connection with the server failed...\n");
 		trials++;
 	}
 
 
 	// function for chat
-	func(sockfd, logfd);
+	result = func(sockfd);
+  fprintf(logfd, "avg trip time with %s is %.2f us\n", inet_ntoa(servaddr.sin_addr), result);
 	fclose(logfd);
 	// close the socket
 	close(sockfd);
