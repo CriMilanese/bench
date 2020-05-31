@@ -3,7 +3,7 @@
 function server_side(){
 
   cd ./server/build;
-  cmake ../;
+  cmake -DCMAKE_BUILD_TYPE=Debug ../;
   make;
   mv server ../;
   rm ../log/*;
@@ -11,7 +11,7 @@ function server_side(){
 
 function client_side(){
   cd ./client/build;
-  cmake ../;
+  cmake -DCMAKE_BUILD_TYPE=Debug ../;
   make;
   mv client ../;
   rm ../log/*;
