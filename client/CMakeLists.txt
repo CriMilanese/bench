@@ -18,3 +18,6 @@ target_sources(client PUBLIC ${PROJECT_SOURCE_DIR}/inc/queue.c)
 
 # path to search for include files
 include_directories(PUBLIC ${PROJECT_SOURCE_DIR}/inc)
+
+# include compiler flags for better release/debug compilation
+add_compile_options(-Wall -Wpedantic -Wextra -g)
