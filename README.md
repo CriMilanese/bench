@@ -1,5 +1,4 @@
 # benchy
-----
 A tool for communication benchmarking in distributed systems within a local network
 
 ### introduction
@@ -9,7 +8,7 @@ define channels of communication between them and a span of time during which th
 connectivity test will be performed for each of these channels.
 
 ### dependencies
-**python3**  
++ **python3**  
 to perform high-end tasks like the GUI or handle the grpc framework
 
    **grpcio** and **grpcio-tools**  
