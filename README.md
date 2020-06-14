@@ -10,7 +10,8 @@ connectivity test will be performed for each of these channels.
 
 ### dependencies
 **python3**  
-to perform high-end tasks like the GUI or handle the grpc framework  
+to perform high-end tasks like the GUI or handle the grpc framework
+
       **grpcio** and **grpcio-tools**  
       to finely instruct hosts on their role and monitor their returning values  
       **tkinter**  
