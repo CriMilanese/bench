@@ -11,8 +11,8 @@ connectivity test will be performed for each of these channels.
 + **python3**  
 to perform high-end tasks like the GUI or handle the grpc framework
 
-  **grpcio** and **grpcio-tools**  
+  + **grpcio** and **grpcio-tools**  
   to finely instruct hosts on their role and monitor their returning values  
-  **tkinter**  
+  + **tkinter**  
   to run an interface in order to ease the process of building the
   configuration file needed to keep track of all nodes and their links
