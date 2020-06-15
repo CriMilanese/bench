@@ -41,7 +41,7 @@ executed, which in turn runs local compilations to start a local Python
 [grpc](https://grpc.io/docs/languages/python/quickstart/) server.
 3. based on input edges, drawn between the hosts from the configuration file,
 `master.py` then orchestrates the role-playing.
-<p style="text-align: center;">4. Once a command is received, the `slave.py` script
+<p style="text-align: right;">4. Once a command is received, the `slave.py` script
 sifts the [proto buffer](https://developers.google.com/protocol-buffers/docs/pythontutorial)
 request and either forks the C server or opens the client dynamic linked library.
 </p>  
