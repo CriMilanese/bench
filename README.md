@@ -41,7 +41,20 @@ executed, which in turn runs local compilations to start a local Python
 [grpc](https://grpc.io/docs/languages/python/quickstart/) server.
 3. based on input edges, drawn between the hosts from the configuration file,
 `master.py` then orchestrates the role-playing.
-<p style="text-align: right;">4. Once a command is received, the `slave.py` script
+4. Once a command is received, the `slave.py` script
 sifts the [proto buffer](https://developers.google.com/protocol-buffers/docs/pythontutorial)
 request and either forks the C server or opens the client dynamic linked library.
-</p>  
+5. `client.c`:  
+
+   1. receives `target` and `lifetime`
+   2. connects to `target`
+   3. sends `lifetime`
+   4. repeatedly asks the non-blocking socket for data until the select returns a timeout
+6. `chat.c`:  
+
+   1. setup as to accept incoming requests from all IPv4 addresses through an agreed-upon port
+   2. creates a thread-pool and initiate a queue that all threads will be watching
+   3. repeatedly calling select on all connected sockets leads to a simple enqueue operation
+    of the ready file descriptor or when a new connection comes in.
+   4. when a thread picks up a job, it waits for the first message to come in from the client,
+    which will be the duration of the test for that client.
