@@ -7,9 +7,11 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <errno.h>
 #include "queue.h"
 
-#define MAX_BUFFER 1024 * 1024 // 2 MB
+#define MAX_BUFFER 16
+#define SEND_CHUNK 4*1024
 #define PORT 8080
 #define SA struct sockaddr
 #define BACKLOG 10
@@ -19,8 +21,34 @@
 
 // shared data structure
 struct Queue *q;
+
+//shared mutex and conditional variables
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond_var = PTHREAD_COND_INITIALIZER;
+
+int test_client(int *sockfd, FILE *logfd){
+  int sent = 0;
+  int total_sent = 0;
+  char *chunk = malloc(SEND_CHUNK * sizeof(char));
+
+  // start sending chunks to the client until no more bandwidth is available
+  while(1){
+    memset(chunk, 0, SEND_CHUNK * sizeof(char));
+    if((sent = send(*sockfd, chunk, SEND_CHUNK*sizeof(char), 0)) < 0){
+      if(errno == EAGAIN || errno == EWOULDBLOCK){
+        fprintf(logfd, "send would block, maybe..\n");
+        break;
+      } else {
+        fprintf(logfd, "sending chunk error\n");
+      }
+    } else {
+      // fprintf(logfd, "%d bytes were sent\n", sent);
+      total_sent += sent;
+    }
+  }
+  free(chunk);
+  return total_sent;
+}
 
 /*
 *  This function is designed to send data to another device and read
@@ -33,26 +61,30 @@ void communicate(int *sockfd, FILE *logfd){
 
   // fill buffer with zeros
   memset(buff, 0, MAX_BUFFER*sizeof(char));
-  while(1){
-      // read the message from client and copy it in buffer
-      bytes_transferred = recv(*sockfd, buff, MAX_BUFFER*sizeof(char), 0);
 
-      fprintf(logfd, "bytes received: %d\n", bytes_transferred);
-      // the last iteration we break early by sending an exit message
-      // to the server, which terminates the communication
-      if(buff[0]==1)
-        break;
-      // and send that buffer back to client
-      bytes_transferred = send(*sockfd, buff, bytes_transferred*sizeof(char), 0);
-      fprintf(logfd, "bytes sent: %d\n", bytes_transferred);
+  // read the message from client to assess its readiness
+  bytes_transferred = recv(*sockfd, buff, MAX_BUFFER*sizeof(char), 0);
+  fprintf(logfd, "bytes received: %d\n", bytes_transferred);
+  fprintf(logfd, "content recevied: %s\n", buff);
+
+  // the last iteration we break early by sending an exit message
+  // to the server, which terminates the communication
+  // if(buff[0]==1)
+  //   break;
+
+  if(strcmp(buff, "ready") == 0){
+    bytes_transferred = test_client(sockfd, logfd);
+  } else {
+    fprintf(logfd, "client was not ready\n");
   }
+  fprintf(logfd, "bytes sent: %d\n", bytes_transferred);
   free(buff);
 }
 
 // main thread function, each thread in the pool will loop through trying to get the lock
 // and one will wait on a conditional variable to be signaled, meaning there is
 // a job to dequeue
-void *thread_func(void *input){
+void *thread_func(void *output){
   int active_fd = 0;
   while(1){
     pthread_mutex_lock(&mutex);
@@ -60,7 +92,10 @@ void *thread_func(void *input){
     active_fd = dequeue(q);
     pthread_mutex_unlock(&mutex);
     if(active_fd != 0){
-      communicate(&active_fd, (FILE *)input);
+      // make the socket non-blocking
+      fcntl(active_fd, F_SETFL, O_NONBLOCK);
+      // start the actual communication process
+      communicate(&active_fd, (FILE *)output);
     }
   }
 }
@@ -79,7 +114,7 @@ int main(){
   fd_set read_fds;
 
   // open a new fd instead of using stdout and stderr
-  logfd = fopen("bench/server/log/server_log.txt", "w+");
+  logfd = fopen("../server/log/server_log.txt", "w+");
   if(logfd == NULL){
     printf("ERROR: log file opening failed..\n");
     return EXIT_FAILURE;
