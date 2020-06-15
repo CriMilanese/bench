@@ -46,15 +46,19 @@ sifts the [proto buffer](https://developers.google.com/protocol-buffers/docs/pyt
 request and either forks the C server or opens the client dynamic linked library.
 5. `client.c`:  
 
-   1. receives `target` and `lifetime`
-   2. connects to `target`
-   3. sends `lifetime`
-   4. repeatedly asks the non-blocking socket for data until the select returns a timeout
+   + receives `target` and `lifetime`
+   + connects to `target`
+   + sends `lifetime`
+   + repeatedly asks the non-blocking socket for data until the select returns a timeout
 6. `chat.c`:  
 
-   1. setup as to accept incoming requests from all IPv4 addresses through an agreed-upon port
-   2. creates a thread-pool and initiate a queue that all threads will be watching
-   3. repeatedly calling select on all connected sockets leads to a simple enqueue operation
+   + setup as to accept incoming requests from all IPv4 addresses through an agreed-upon port
+   + creates a thread-pool and initiate a queue that all threads will be watching
+   + repeatedly calling select on all connected sockets leads to a simple enqueue operation
     of the ready file descriptor or when a new connection comes in.
-   4. when a thread picks up a job, it waits for the first message to come in from the client,
+   + when a thread picks up a job, it waits for the first message to come in from the client,
     which will be the duration of the test for that client.
+7. the python server re-encodes the returning value from our C clients back to the
+  protobuf type needed to send the results of the tests.
+8. the coordinating script waits for most processes to terminate before gathering
+  the data and possibly come up with some graphical representation.  
