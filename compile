@@ -2,7 +2,6 @@
 
 function server_side(){
 
-  cd ./server/build;
   cmake -DCMAKE_BUILD_TYPE=Debug ../;
   make;
   mv server ../;
@@ -10,11 +9,15 @@ function server_side(){
 }
 
 function client_side(){
-  cd ./client/build;
   cmake -DCMAKE_BUILD_TYPE=Debug ../;
   make;
-  mv client ../;
+  mv liblclient.so ../;
   rm ../log/*;
+}
+
+function grpc(){
+  python3 -m grpc_tools.protoc -I. --python_out=../utils/ --grpc_python_out=../utils/ engage.proto;
+  echo '[debug] grpc compilation completed'
 }
 
 if [ "$1" == "server" ]
@@ -23,10 +26,16 @@ then
 elif [ "$1" == "client" ]
 then
     client_side;
-elif [ "$1" == "both" ]
+elif [ "$1" == "grpc" ]
 then
+    grpc;
+elif [ "$1" == "all" ]
+then
+    cd grpc;
+    grpc;
+    cd ../server/build;
     server_side;
-    cd ../../;
+    cd ../../client/build;
     client_side;
 else
   echo 'missing or wrong argument'
