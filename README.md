@@ -23,7 +23,7 @@ to perform high-end tasks like the GUI or handle the grpc framework
 Makefile constructing library that let me build, test and package my software,
 freeing me from the hassles of platform dependencies
 + **pthread**
-or similar. Included in the ''CMakeLists' file, a valid thread library is
+or similar. Included in the ''CMakeLists'' file, a valid thread library is
 sought at compile time.
 
 ### assumptions
