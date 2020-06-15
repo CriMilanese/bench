@@ -1,0 +1,16 @@
+
+syntax = "proto3";
+
+// 0 to run C server 1 to run C client
+message Role {
+    int32 lifetime = 1;
+    string target = 2;
+}
+
+message Metrics {
+    double bandwidth = 1;
+}
+
+service Test {
+    rpc Engage(Role) returns (Metrics) {}
+}
