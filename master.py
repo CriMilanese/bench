@@ -6,17 +6,43 @@ import time
 import re
 
 sys.path.append('utils');
-from class_Node import Node
+from class_node import Node
 import gui
+from interactions import *
+
+def play(net):
+
+    all_host = list(net.graph.keys())
+    keys = list(net.graph.keys())
+    if not all_host:
+        raise ValueError("no servers on the list")
+    for host in net.graph.values():
+        all_host.extend(host)
+    all_host = set(all_host)
+    print(all_host)
+    for instance in all_host:
+        distribute_software(instance)
+        start_python_server(instance)
+
+    for key in keys:
+        target(key, net.graph[key])
+
+    time.sleep(20)
+    for instance in all_host:
+        stop_python_server(instance)
+        print("\n")
+
+
 
 def main(behavior):
     """ because main will never die
-        this function behaves as passed from the input as an argument
+        this function behaves as instructed from the input, supplied as an argument
         to the script
     """
     if behavior=="compose" or behavior=="all":
         gui.interface()
 
+    return 0
     # check for correct entry format
     r = re.compile('.+ [0-9]+\.[0-9]+\.[0-9]+\.[0-9]+ - .+ [0-9]+\.[0-9]+\.[0-9]+\.[0-9]+ [0-9]+')
     hosts_list = [];
@@ -38,7 +64,6 @@ def main(behavior):
         else:
             raise ValueError("[ERROR] host format is incorrect")
 
-    return 0
     # install app
     if(behavior=="copy" or behavior=="all"):
         for node in nodes:
