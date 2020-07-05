@@ -16,6 +16,7 @@ function client_side(){
 }
 
 function grpc(){
+  source ~/py_envs/testing/bin/activate
   python3 -m grpc_tools.protoc -I. --python_out=../utils/ --grpc_python_out=../utils/ engage.proto;
   echo '[debug] grpc compilation completed'
 }
