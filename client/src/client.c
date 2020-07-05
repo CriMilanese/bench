@@ -74,7 +74,7 @@ int recv_all(int *sockfd, FILE *logfd){
 }
 
 float *communicate(int *sockfd, int lifespan, FILE *logfd){
-	const char *msg = ;
+	const char *msg = "ready";
 	struct timeval curr_tm, rtt_tm, bw_tm;
   long sum_rtt, sum_bw = 0;
 	int n = 0;
