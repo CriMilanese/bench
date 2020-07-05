@@ -3,6 +3,7 @@ from concurrent import futures
 import time
 import sys
 sys.path.append('../utils');
+from signal import signal, SIGHUP
 
 #import classes for c library
 from ctypes import *
@@ -54,14 +55,22 @@ engage_pb2_grpc.add_TestServicer_to_server(
         EngageServer(), server)
 
 # listen on port 50051
-print('Slave ready to receive instructions. Listening on port 50051.')
+with open('log', 'w') as log:
+    log.write('Slave ready to receive instructions. Listening on port 50051.')
 server.add_insecure_port('[::]:50051')
 server.start()
 
+def closing(*args):
+    print("gracefully stopping the server")
+    server.stop(0)
+    sys.exit(0)
+
+
+signal(SIGHUP, closing)
 # since server.start() will not block,
 # a sleep-loop is added to keep alive
 try:
     while True:
-        time.sleep(86400)
+        time.sleep(1)
 except KeyboardInterrupt:
     server.stop(0)
