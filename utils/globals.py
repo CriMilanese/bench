@@ -1,0 +1,13 @@
+HEIGHT = 800
+WIDTH = 800
+WHITE = '#f4f6ff'
+LIGHT_BLUE = '#127681'
+BLUE = '#10375c'
+GOLD = '#f3c623'
+ERROR_COLOR = '#ffb3b3'
+root = ''
+input_canvas = ''
+frame = ''
+feedback = ''
+network = ''
+results = ''
