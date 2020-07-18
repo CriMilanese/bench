@@ -5,3 +5,4 @@ client/liblclient.so
 server/server
 config/hosts
 __pycache__
+report*
