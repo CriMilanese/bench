@@ -1,3 +1,9 @@
+"""
+	This script handles the GUI, builds a structured representation of the
+	network and its hosts as the user inserts them, does some error checking
+	and calls back the master to deal with the communications.
+"""
+
 import tkinter as tk
 import time
 import master
@@ -13,8 +19,7 @@ def clear_entry(event):
 	if(background==ERROR_COLOR):
 		event.widget.delete(0, "end")
 		event.widget.config(bg=WHITE)
-		global feedback
-		feedback.config(text="", fg=ERROR_COLOR);
+	feedback.config(text="", fg=ERROR_COLOR);
 
 def check_entries():
 	for i, entry in enumerate(frame.entries):
@@ -35,32 +40,6 @@ def check_entries():
 				frame.entries[i].config(bg=ERROR_COLOR)
 				raise ValueError("ip field "+str(i+1)+" type is incorrect")
 	return True
-
-
-def create_file():
-	""" get info from the input fields and construct the configuration
-	file to perform the tests requested """
-	try:
-		if(check_entries()):
-				feedback.config(text="network has been serialized into config/hosts", fg=BLUE)
-				with open("config/network", "a+") as fd:
-					for i, entry in enumerate(frame.entries):
-						if i==0 or i==5 or i==(len(frame.entries)-2):
-							fd.write(entry.get()+" ")
-						elif i==4:
-							fd.write(entry.get()+" - ")
-						elif i==(len(frame.entries)-1):
-							fd.write(entry.get())
-						else:
-							fd.write(entry.get()+".")
-					fd.write("\n")
-	except ValueError as err:
-		feedback.config(text=err)
-
-def test():
-	global network
-	master.play(network)
-	return 0
 
 def add_node():
 	try:
@@ -84,16 +63,19 @@ def remove_node():
 	except ValueError as err:
 		feedback.config(text=err)
 
+def alert(err):
+	feedback.config(text=err, fg=ERROR_COLOR)
+
 def draw_buttons():
     global frame
-    btn = tk.Button(frame, fg=WHITE, bg=BLUE, text="Test", command=test)
+    btn = tk.Button(frame, fg=WHITE, bg=BLUE, text="Test", command= lambda: master.play(network))
     btn.place(relx=0.84, rely=0.95, relwidth=0.16, relheight=0.05)
-    btn = tk.Button(frame, fg='white', bg=BLUE, text="Add", command=add_node)
+    btn = tk.Button(frame, fg=WHITE, bg=BLUE, text="Copy Sw", command= lambda: master.copy(network))
+    btn.place(relx=0.84, rely=0.87, relwidth=0.16, relheight=0.05)
+    btn = tk.Button(frame, fg=WHITE, bg=BLUE, text="Add", command=add_node)
     btn.place(relx=0.75, rely=0.30, relwidth=0.15, relheight=0.05)
-    # btn.pack()
-    btn = tk.Button(frame, fg='white', bg=BLUE, text="Delete", command=remove_node)
+    btn = tk.Button(frame, fg=WHITE, bg=BLUE, text="Delete", command=remove_node)
     btn.place(relx=0.75, rely=0.37, relwidth=0.15, relheight=0.05)
-    # btn.pack()
 
 # debugging fill up
 def fill_entries():
@@ -121,9 +103,11 @@ def window():
 
 def display_info():
 	label = tk.Label(frame, text=\
-	"insert the data for each connection\nuser: to access the remote machine with ssh\n" \
+	"insert the data for each connection\n \
+	user: to access the remote machine with ssh\n" \
 	"ip: local ip address for the host\n" \
-	"duration: test timeout for this node\n", \
+	"duration: test timeout for this connection\n" \
+	"duplicate entries are not allowed", \
 	bg=BLUE, fg=GOLD).place(relx=0.1, rely=0.05, relwidth=0.8, relheight=0.15)
 	label = tk.Label(frame, text=\
 						"user\n--------", \
@@ -186,8 +170,10 @@ def interface():
 		draw_buttons()
 		root.mainloop()
 	except KeyboardInterrupt:
-		root.destroy();
+		root.destroy()
 		exit(0)
+	except ValueError as e:
+		feedback.config(text=e, color=ERROR_COLOR)
 
 
 if __name__ == "__main__":
