@@ -1,6 +1,8 @@
 client/build/*
 server/build/*
 utils/__pycache__
+utils/engage*
+client/client
 client/liblclient.so
 server/server
 config/hosts
