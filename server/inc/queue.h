@@ -1,7 +1,7 @@
 #ifndef QUEUE_H
 #define QUEUE_H
 
-// A structure to represent a queue
+// A linked list structure to represent a queue
 struct Queue{
   int *head;
   int *tail;

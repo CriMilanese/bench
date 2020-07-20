@@ -5,7 +5,6 @@
 #include "queue.h"
 
 // function to create a queue of given capacity.
-// It initializes size of queue as 0
 struct Queue* createQueue(int capacity){
   struct Queue* queue = (struct Queue*) calloc(1, sizeof(struct Queue));
   queue->capacity = capacity;
@@ -74,20 +73,20 @@ int *back(struct Queue* queue){
   return queue->rear;
 }
 
-void print_queue(FILE* fd, struct Queue *que){
-  int sz = que->size;
+void print_queue(FILE* fd, struct Queue *queue){
+  int sz = queue->size;
   fprintf(fd, "Printing the content of queue..\n");
   fprintf(fd, "size is: %d\n", sz);
-  int *tmp = que->front;
+  int *tmp = queue->front;
   for(int i=0; i<sz; i++){
-    fprintf(fd, "element %d is %d\n", i, *(que->front));
-    if(que->front == que->tail){
-      que->front = que->head;
+    fprintf(fd, "element %d is %d\n", i, *(queue->front));
+    if(queue->front == queue->tail){
+      queue->front = queue->head;
     } else {
-      que->front += 1;
+      queue->front += 1;
     }
   }
-  que->front = tmp;
+  queue->front = tmp;
 }
 
 void free_queue(struct Queue *queue){
