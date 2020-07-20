@@ -12,6 +12,7 @@ function client_side(){
   cmake -DCMAKE_BUILD_TYPE=Debug ../;
   make;
   mv liblclient.so ../;
+  mv client ../;
   rm ../log/*;
 }
 
