@@ -7,7 +7,7 @@ project(bench VERSION 1.0)
 # add the executable
 add_executable(client ${PROJECT_SOURCE_DIR}/src/client.c)
 
-# creates a shared library for implementation in python code
+# creates a shared library for better implementation with python code
 add_library(lclient SHARED ${PROJECT_SOURCE_DIR}/src/client.c)
 
 # path to search for include files
