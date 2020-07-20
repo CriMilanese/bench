@@ -94,9 +94,9 @@ float *communicate(int *sockfd, int lifespan, FILE *logfd){
 	fprintf(logfd, "total bytes received: %d\n", bytes_transferred);
 
 	sum_rtt += ((curr_tm.tv_sec*1e6 + curr_tm.tv_usec) - (rtt_tm.tv_sec*1e6 + rtt_tm.tv_usec));
-	sum_bw += ((curr_tm.tv_sec*1e6 + curr_tm.tv_usec) - (bw_tm.tv_sec*1e6 + bw_tm.tv_usec));
+	sum_bw += (((curr_tm.tv_sec-5)*1e6 + curr_tm.tv_usec) - (bw_tm.tv_sec*1e6 + bw_tm.tv_usec));
 	results[RTT_OPTION] = (float)sum_rtt/TESTS;
-	results[BW_OPTION] = ((bytes_transferred/TESTS)*1e6/((float)sum_bw/TESTS));
+	results[BW_OPTION] = ((bytes_transferred)*1e6/((float)sum_bw));
 	return results;
 }
 
@@ -123,7 +123,7 @@ float start(char* target_server, int lifetime){
 	}
 	bzero(&servaddr, sizeof(servaddr));
 
-	fprintf(logfd, "[DEBUG] trying to connect to: %s\n", target_server);
+	fprintf(stdout, "[DEBUG] trying to connect to: %s\n", target_server);
 	// assign IP, PORT
 	servaddr.sin_family = AF_INET;
 	servaddr.sin_addr.s_addr = inet_addr(target_server);
@@ -161,7 +161,10 @@ void free_results(){
 	free(results);
 }
 
-// to please compiler
-int main(){
+// to please compiler because I also build the exec
+int main(int argc, char *argv[]) {
+	char* t = argv[1];
+	float result = start(t, 1);
+	printf("%f", result);
 	return 0;
 }
