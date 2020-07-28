@@ -1,7 +1,7 @@
 client/build/*
 server/build/*
 utils/__pycache__
-engage*
+utils/engage*
 client/client
 client/liblclient.so
 server/server
