@@ -1,8 +1,7 @@
 client/build/*
 server/build/*
 utils/__pycache__
-utils/engage_pb2.py
-utils/engage_pb2_grpc.py
+engage*
 client/client
 client/liblclient.so
 server/server
