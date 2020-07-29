@@ -9,7 +9,7 @@ from signal import signal, SIGINT, SIGTERM
 from ctypes import *
 from subprocess import call
 
-# import classes fro grpc server
+# import classes for grpc server
 import engage_pb2
 import engage_pb2_grpc
 
@@ -19,7 +19,7 @@ class EngageServer(engage_pb2_grpc.TestServicer):
 
     def terminal(self, lifetime, target):
         result = ''
-        if (lifetime!=0):
+        if target:
             lib = CDLL("../client/liblclient.so")
             lib.start.argtypes = [c_char_p, c_int]
             lib.start.restype = c_float
@@ -63,6 +63,6 @@ signal(SIGTERM, closing)
 # a sleep-loop is added to keep alive
 try:
     while True:
-        time.sleep(1)
+        time.sleep(5)
 except KeyboardInterrupt:
     server.stop(0)
