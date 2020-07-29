@@ -9,7 +9,7 @@ struct Queue* createQueue(int capacity){
   struct Queue* queue = (struct Queue*) calloc(1, sizeof(struct Queue));
   queue->capacity = capacity;
   queue->size = 0;
-  queue->head = (int*) calloc(queue->capacity, sizeof(int));
+  queue->head = (int*) calloc(queue->capacity, sizeof(struct Node));
   queue->front = queue->rear = queue->head;
   queue->tail = queue->head + queue->capacity - 1;
   return queue;
@@ -25,10 +25,11 @@ int is_empty(struct Queue* queue){
 }
 
 // Function to add an item to the queue.
-int *enqueue(struct Queue* queue, int item){
-  int *tmp = &item;
+int *enqueue(struct Queue* queue, int item, int lf){
   if (is_full(queue))
       return NULL;
+  int *tmp = &item;
+  
   *(queue->rear) = item;
 
   // make it circular
