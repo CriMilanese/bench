@@ -14,25 +14,55 @@
 #define SEND_CHUNK 4*1024
 #define PORT 8080
 #define SA struct sockaddr
-#define BACKLOG 10
+#define BACKLOG 10  // holds a pool of maximum open ports
 #define TIMEOUT 10  // sec
 #define MAX_JOBS 10
 #define THREAD_POOL_SIZE 4
+#define WIN_TIME 1 // sec for each host
 
 // shared data structure
 struct Queue *q;
 
-//shared mutex and conditional variables
+//shared mutex and conditional variable
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond_var = PTHREAD_COND_INITIALIZER;
 
-int test_client(int *sockfd, FILE *logfd){
+int test_client(int *sockfd, FILE *logfd, char* lifetime){
   int sent = 0;
-  int total_sent = 0;
-  char *chunk = malloc(SEND_CHUNK * sizeof(char));
 
-  // start sending chunks to the client until no more bandwidth is available
+  struct timeval elapsed;
+  fd_set orig_set, copy_set;
+  int total_sent = 0;
+  int lt = atoi(lifetime);
+  char *chunk = malloc(SEND_CHUNK * sizeof(char));
+  int rv = 0; // returning value for select
+
+  FD_ZERO(&orig_set);
+  FD_ZERO(&copy_set);
+  FD_SET(sockfd, &orig_set);
+
+  elapsed = {WIN_TIME, 0}; // 1 sec
+
+  /*
+    start sending chunks to the client until select will return the timeout,
+    which indicates that the current time frame to test the current client has
+    passed and its socket fd must be re-enqueued
+  */
   while(1){
+    copy_set = orig_set;
+    rv = select(FD_SETSIZE, copy_set, NULL ,NULL, &elapsed);
+    if(rv < 0){
+      fprintf(logfd,"ERROR: server select() failed..\n");
+      return EXIT_FAILURE;
+    } else if (rv == 0){
+      pthread_mutex_lock(&mutex);
+      enqueue(q, *sockfd, lt);
+      // fprintf(logfd , "from main thread\n");
+      // print_queue(logfd, q);
+      pthread_cond_signal(&cond_var);
+      pthread_mutex_unlock(&mutex);
+      break;
+    }
     memset(chunk, 0, SEND_CHUNK * sizeof(char));
     if((sent = send(*sockfd, chunk, SEND_CHUNK*sizeof(char), 0)) < 0){
       if(errno == EAGAIN || errno == EWOULDBLOCK){
@@ -72,8 +102,10 @@ void communicate(int *sockfd, FILE *logfd){
   // if(buff[0]==1)
   //   break;
 
+  // receive the expected timelife for this connection
+
   if(strcmp(buff, "ready") == 0){
-    bytes_transferred = test_client(sockfd, logfd);
+    bytes_transferred = test_client(sockfd, logfd, buff);
   } else {
     fprintf(logfd, "client was not ready\n");
   }
@@ -171,7 +203,6 @@ int main(){
     pthread_create(&thread_pool[i], NULL, thread_func, (void *)logfd);
   }
 
-
   while(1){
     /* copy fds over, because select is disrupting */
     read_fds = master_read;
@@ -197,7 +228,8 @@ int main(){
             fprintf(logfd , "ERROR: server accept() failed..\n");
             return EXIT_FAILURE;
           }
-          FD_SET(newfd, &master_read); /* add to master set */
+          /* add to master set */
+          FD_SET(newfd, &master_read);
           if(newfd > maxfd){
             /* keep track of the maximum */
             maxfd = newfd;
@@ -207,7 +239,7 @@ int main(){
           // output for parent process
           fprintf(logfd , "INFO: testing %s with fd: %d\n", inet_ntoa(client.sin_addr), i);
           pthread_mutex_lock(&mutex);
-          enqueue(q, i);
+          enqueue(q, i, 0);
           // fprintf(logfd , "from main thread\n");
           // print_queue(logfd, q);
           pthread_cond_signal(&cond_var);
