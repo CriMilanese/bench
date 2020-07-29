@@ -4,7 +4,7 @@ utils/__pycache__
 utils/engage*
 client/client
 client/liblclient.so
-/server/server
+server/server
 config/hosts
 __pycache__
 report*
