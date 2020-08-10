@@ -4,17 +4,20 @@
 	and calls back the master to deal with the communications.
 """
 
-import tkinter as tk
+from tkinter import Label, Button, Toplevel, X, Canvas, Tk, Frame, Entry
 import time
 import master
-from sys import exit, path
-path.append("utils")
+from sys import path
 from class_node import Node
 from class_network import Network
 from globals import *
 from interactions import *
 
 def clear_entry(event):
+	"""
+		replaces the content of the widget where the event has happened with
+		an empty string and restore its original background color
+	"""
 	background = event.widget.config()['background'][-1];
 	if(background==ERROR_COLOR):
 		event.widget.delete(0, "end")
@@ -22,6 +25,10 @@ def clear_entry(event):
 	feedback.config(text="", fg=ERROR_COLOR);
 
 def check_entries():
+	"""
+		verify whether each of the entries contains the expected input format,
+		else it raises an error
+	"""
 	for i, entry in enumerate(frame.entries):
 		if i==0 or i==5:
 			if entry.get().isalnum():
@@ -42,20 +49,25 @@ def check_entries():
 	return True
 
 def add_node():
+	"""
+		upon correct values format, it provides the necessary information to the
+		network class, else it displays the raised error to the user.
+	"""
 	try:
-		# prevent click bouncing
-		time.sleep(0.2)
 		if(check_entries()):
 			server_entry = [frame.entries[0].get(), str(frame.entries[1].get()+"."+frame.entries[2].get()+"."+frame.entries[3].get()+"."+frame.entries[4].get())]
 			client_entry = [frame.entries[5].get(), str(frame.entries[6].get()+"."+frame.entries[7].get()+"."+frame.entries[8].get()+"."+frame.entries[9].get())]
 			connection_lifetime = frame.entries[10].get()
-			global network
 			network.add_connection(server_entry, client_entry, connection_lifetime);
 
 	except ValueError as err:
 		feedback.config(text=err)
 
 def remove_node():
+	"""
+		simply removes the last nodes involved in a connection, the network class
+		will take care of error handling and mutliple connections nodes
+	"""
 	try:
 		# prevents click bounces
 		time.sleep(0.2)
@@ -64,102 +76,107 @@ def remove_node():
 	except ValueError as err:
 		feedback.config(text=err)
 
+def show_info():
+	"""
+		provides a secondary window, displaying a more structured format for the
+		connections created and their results
+	"""
+	win_info = Toplevel(root)
+	win_info.title("Connections transcript")
+	info = Canvas(win_info, height=WIN_HEIGHT/2, width=WIN_WIDTH/2, bg=BLUE)
+	info.pack(fill=X, expand=1)
+	global network
+	Label(info, text="source", fg=GOLD, bg=BLUE).grid(row=0, column=1, padx=5, pady=5)
+	Label(info, text="destination", fg=GOLD, bg=BLUE).grid(row=0, column=2, padx=5, pady=5)
+	Label(info, text="lifetime", fg=GOLD, bg=BLUE).grid(row=0, column=3, padx=5, pady=5)
+	Label(info, text="bandwidth", fg=GOLD, bg=BLUE).grid(row=0, column=4, padx=5, pady=5)
+	for index, edge in enumerate(network.edges):
+		Label(info, text=network.edges[edge].source, fg=WHITE, bg=BLUE).grid(row=index+1, column=1, padx=8, pady=8)
+		Label(info, text=network.edges[edge].dest, fg=WHITE, bg=BLUE).grid(row=index+1, column=2, padx=8, pady=8)
+		Label(info, text=network.edges[edge].lifetime, fg=WHITE, bg=BLUE).grid(row=index+1, column=3, padx=8, pady=8)
+		Label(info, text=network.edges[edge].result.get(), fg=WHITE, bg=BLUE).grid(row=index+1, column=4, padx=8, pady=8)
+
+
 def alert(err):
+	"""
+		to be called from other scripts
+		TODO: global variables are there for a reason
+	"""
 	feedback.config(text=err, fg=ERROR_COLOR)
 
 def draw_buttons():
     global frame
-    btn = tk.Button(frame, fg=WHITE, bg=BLUE, text="Test", command= lambda: master.play(network))
-    btn.place(relx=0.84, rely=0.95, relwidth=0.16, relheight=0.05)
-    btn = tk.Button(frame, fg=WHITE, bg=BLUE, text="Copy Sw", command= lambda: master.copy(network))
-    btn.place(relx=0.84, rely=0.87, relwidth=0.16, relheight=0.05)
-    btn = tk.Button(frame, fg=WHITE, bg=BLUE, text="Add", command=add_node)
+    btn = Button(frame, fg=WHITE, bg=BLUE, text="Test", command= lambda: master.play(network))
+    btn.place(relx=0, rely=0.95, relwidth=0.15, relheight=0.05)
+    btn = Button(frame, fg=WHITE, bg=BLUE, text="Copy Sw", command= lambda: master.copy(network))
+    btn.place(relx=0.15, rely=0.95, relwidth=0.15, relheight=0.05)
+    btn = Button(frame, fg=WHITE, bg=BLUE, text="Info", command=show_info)
+    btn.place(relx=0.3, rely=0.95, relwidth=0.15, relheight=0.05)
+    btn = Button(frame, fg=WHITE, bg=BLUE, text="Add", command=add_node)
     btn.place(relx=0.75, rely=0.30, relwidth=0.15, relheight=0.05)
-    btn = tk.Button(frame, fg=WHITE, bg=BLUE, text="Delete", command=remove_node)
+    btn = Button(frame, fg=WHITE, bg=BLUE, text="Delete", command=remove_node)
     btn.place(relx=0.75, rely=0.37, relwidth=0.15, relheight=0.05)
 
-# debugging fill up
-def fill_entries():
-	frame.entries[0].insert(0, "cris")
-	frame.entries[1].insert(0, "192")
-	frame.entries[2].insert(0, "168")
-	frame.entries[3].insert(0, "1")
-	frame.entries[4].insert(0, "143")
-	frame.entries[5].insert(0, "pi")
-	frame.entries[6].insert(0, "192")
-	frame.entries[7].insert(0, "168")
-	frame.entries[8].insert(0, "1")
-	frame.entries[9].insert(0, "146")
-
 def window():
-	global root, input_canvas, output_canvas, frame, feedback
-	root = tk.Tk()
-	root.title("bench GUI")
-	input_canvas = tk.Canvas(root, height=HEIGHT, width=WIDTH, bg=BLUE)
+	global root, frame, feedback
+	root = Tk()
+	root.title("Traffic Ward")
+	input_canvas = Canvas(root, height=WIN_HEIGHT, width=WIN_WIDTH, bg=BLUE)
 	input_canvas.pack()
-	frame = tk.Frame(root, bg=LIGHT_BLUE)
-	frame.place(relx=0.1, rely=0.1, relwidth=0.8, relheight=0.8)
-	feedback = tk.Label(frame, text="", bg=LIGHT_BLUE, fg=ERROR_COLOR)
-	feedback.place(relx=0.1, rely=0.45, relwidth=0.8, relheight=0.1)
+	frame = Frame(root, bg=LIGHT_BLUE)
+	frame.place(relx=0.05, rely=0.05, relwidth=0.9, relheight=0.9)
+	feedback = Label(frame, text="", bg=LIGHT_BLUE, fg=ERROR_COLOR)
+	feedback.place(relx=0.5, rely=0.95, relwidth=0.5, relheight=0.05)
 
-def display_info():
-	label = tk.Label(frame, text=\
-	"insert the data for each connection\n \
-	user: to access the remote machine with ssh\n" \
-	"ip: local ip address for the host\n" \
-	"duration: test timeout for this connection\n" \
-	"duplicate entries are not allowed", \
+def display_labels():
+	label = Label(frame, text=\
+	"Welcome!\n" \
+	"this tool will help you calculate the maximum bandwidth\n" \
+	"available across the devices connected within your local network\n" \
+	"----------------------------------------------------------------\n" \
+	"in order to proceed, you need ssh authentication between the hosts", \
 	bg=BLUE, fg=GOLD).place(relx=0.1, rely=0.05, relwidth=0.8, relheight=0.15)
-	label = tk.Label(frame, text=\
+	label = Label(frame, text=\
 						"user\n--------", \
 	bg=LIGHT_BLUE, fg=GOLD).place(relx=0.13, rely=0.23, relwidth=0.1, relheight=0.05)
-	label = tk.Label(frame, text=\
+	label = Label(frame, text=\
 						"ip address\n-----------------------------------------------", \
 	bg=LIGHT_BLUE, fg=GOLD).place(relx=0.23, rely=0.23, relwidth=0.4, relheight=0.05)
-	label = tk.Label(frame, text=\
+	label = Label(frame, text=\
 						"duration\n--------", \
 	bg=LIGHT_BLUE, fg=GOLD).place(relx=0.63, rely=0.23, relwidth=0.1, relheight=0.05)
-	label = tk.Label(frame, text=\
+	label = Label(frame, text=\
 						"SERVER", \
-	bg=LIGHT_BLUE, fg=GOLD).place(relx=0.02, rely=0.29, relwidth=0.1, relheight=0.05)
-	label = tk.Label(frame, text=\
+	bg=LIGHT_BLUE, fg=GOLD).place(relx=0.02, rely=0.3, relwidth=0.1, relheight=0.05)
+	label = Label(frame, text=\
 						"CLIENT", \
-	bg=LIGHT_BLUE, fg=GOLD).place(relx=0.02, rely=0.39, relwidth=0.1, relheight=0.05)
+	bg=LIGHT_BLUE, fg=GOLD).place(relx=0.02, rely=0.38, relwidth=0.1, relheight=0.05)
 
 def insert_entries():
-	display_info()
+	display_labels()
 	for j in range(int(2)):
 		for i in range(int(4)):
 			if i == 0:
-				dot = tk.Label(frame, text="@", bg=LIGHT_BLUE, fg=GOLD)
+				token = Label(frame, text="@", bg=LIGHT_BLUE, fg=GOLD)
 			else:
-				dot = tk.Label(frame, text=".", bg=LIGHT_BLUE, fg=GOLD)
-			dot.place(relx=(0.22+(i*0.1)), rely=0.31+(0.08*j), relwidth=0.02, relheight=0.05)
+				token = Label(frame, text=".", bg=LIGHT_BLUE, fg=GOLD)
+			token.place(relx=(0.22+(i*0.1)), rely=0.3+(0.08*j), relwidth=0.02, relheight=0.05)
 	frame.entries = []
 	for j in range(int(2)):
 		for i in range(int(5)):
-			entry = tk.Entry(frame, bg=WHITE, justify="center")
-			entry.place(relx=0.15+i*0.1, rely=0.30+(0.08*j), relwidth=0.06, relheight=0.05)
-			# # ----------- DEBUG --------------
-			# entry.insert(0, str((j+1)*(i+1)))
-			# # ----------- DEBUG --------------
+			entry = Entry(frame, bg=WHITE, justify="center")
+			entry.place(relx=0.15+i*0.1, rely=0.3+(0.08*j), relwidth=0.06, relheight=0.04)
 			entry.focus_set()
 			entry.bind("<Button-1>", clear_entry)
-			entry.bind("<KeyPress>", clear_entry)
+			entry.bind("<Key>", clear_entry)
 			frame.entries.append(entry)
 
-	# ----------- DEBUG --------------
-	fill_entries()
-	# ----------- DEBUG --------------
-
 	# this part is for the duration entry, which is not aligned with the others
-	entry = tk.Entry(frame, bg=WHITE, justify="center")
-	entry.place(relx=0.65, rely=0.33, relwidth=0.06, relheight=0.05)
-	# ----------- DEBUG --------------
-	entry.insert(0, "10")
-	# ----------- DEBUG --------------
+	entry = Entry(frame, bg=WHITE, justify="center")
+	entry.place(relx=0.65, rely=0.33, relwidth=0.06, relheight=0.04)
 	entry.focus_set()
 	entry.bind("<Button-1>", clear_entry)
+	entry.bind("<Key>", clear_entry)
 	frame.entries.append(entry)
 
 def interface():
@@ -172,7 +189,7 @@ def interface():
 		root.mainloop()
 	except KeyboardInterrupt:
 		root.destroy()
-		exit(0)
+		return 0
 	except ValueError as e:
 		feedback.config(text=e, color=ERROR_COLOR)
 
