@@ -9,7 +9,6 @@ class Node():
     def __init__(self, info):
         self.user = info[0];
         self.ip = info[1];
-        self.lifetime = info[2];
         self.server_handle = ''
 
     def show(self, anchor, ind):
@@ -32,10 +31,7 @@ class Node():
             return True
 
     def __hash__(self):
-        tmp = ''
-        for a in self.ip.split('.'):
-            tmp += a
-        return hash(int(tmp))
+        return hash(str(self.user+self.ip))
 
     def __str__(self):
         return str(self.user + " - " + self.ip)
