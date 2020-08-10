@@ -12,9 +12,7 @@ import sys
 sys.path.append('utils');
 import time
 import re
-from class_node import Node
 import gui
-from globals import *
 from interactions import *
 
 def play(net):
@@ -28,11 +26,10 @@ def play(net):
         all_host = set(all_host)
         # print(all_host)
         for instance in all_host:
-            distribute_software(instance)
             start_python_server(instance)
 
         for key in keys:
-            target(key, net.graph[key])
+            target(net.edges, key, net.graph[key])
 
         time.sleep(20)
         for instance in all_host:
@@ -59,23 +56,5 @@ def copy(net):
     except ValueError as err:
         gui.alert(err)
 
-
-def main(behavior):
-    """
-        because main will never die
-        this function behaves as instructed from the input, discriminating
-        on the basis of the argument given to the script
-    """
-    if behavior=="compose" or behavior=="all":
-        gui.interface()
-
-    return 0
-
 if __name__ == '__main__':
-    if(len(sys.argv) > 1):
-        try:
-            main(sys.argv[1])
-        except ValueError as e:
-            gui.alert(e)
-    else:
-        print("missing argument")
+    gui.interface()
