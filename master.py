@@ -1,21 +1,25 @@
-#!usr/bin/env python3
+#!/usr/bin/env python3
 """
     this script is the starting point of the program,
     it manages the operations on the hosts, abstracted from the user actions
     on the gui.
     # TODO: make the gui a separated process and manage the actions asynchronously
-
 """
 
 import os
 import sys
-sys.path.append('utils');
 import time
 import re
 import gui
+sys.path.append('utils')
 from interactions import *
 
 def play(net):
+    """
+        core function: runs and terminates the grpc servers on each device on
+        the network passed as an argument, uses proto buffers to dictate their
+        roles and retrieve the tests results
+    """
     try:
         all_host = list(net.graph.keys())
         keys = list(net.graph.keys())
