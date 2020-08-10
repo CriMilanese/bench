@@ -9,7 +9,7 @@
 *  char* is the target server local IP address
 *  int is the user-defined timeout for the test
 */
-float start(char*, int);
+double start(char*, int);
 
 /*
 * the function gauges the time and bytes send to this very client
@@ -19,7 +19,7 @@ float start(char*, int);
 *  int is the user-defined timeout for the test
 *  FILE* log file descriptor
 */
-float *communicate(int*, int, FILE*);
+double communicate(int*, int, FILE*);
 
 /*
 * uses non blocking sockets in a select loop to keep reading until
