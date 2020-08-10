@@ -1,15 +1,14 @@
-from tkinter import Canvas, X, BOTTOM, LAST
+from tkinter import Canvas, X, BOTTOM
 from class_node import Node
+from class_edge import Edge
 from globals import *
 
 class Network():
     # .........
     def __init__(self, frame):
-        # super().__init__()
         self.hosts = []
-        self.edges = []
+        self.edges = {}
         self.graph = {}
-        self.last_added = []
         self.servers_history = []
         self.GUI(frame)
 
@@ -17,12 +16,14 @@ class Network():
         self.canvas = Canvas(frame, height = 300, width=700, bg = LIGHT_BLUE)
         self.canvas.pack(fill=X, side=BOTTOM)
 
-    def pop_edge(self):
-        if not self.edges:
+    def pop_edge(self, anchor, server, client):
+        link = Edge.create_hash(client, server)
+        if link not in self.edges.keys():
+            print("not in list")
             return
-        last_edge = self.edges[-1]
-        self.canvas.delete(last_edge)
-        self.edges.pop()
+        self.canvas.delete(self.edges[link].body)
+        self.canvas.delete(self.edges[link].label)
+        del self.edges[link]
 
     def pop_host(self):
         if not self.hosts:
@@ -34,10 +35,13 @@ class Network():
             self.hosts.pop()
             self.pop_edge()
 
-    def add_edge(self, source, dest):
-        self.edges.append(self.canvas.create_line(source.x, source.y, dest.x, dest.y, arrow=LAST))
+    def add_edge(self, source, dest, lifetime):
+        # self.edges.append(self.canvas.create_line(source.x, source.y, dest.x, dest.y, arrow=LAST))
+        link = Edge.create_hash(source, dest)
+        self.edges[link] = Edge(source, dest, lifetime)
+        self.edges[link].show(self.canvas, source, dest)
 
-    def add_connection(self, server, client):
+    def add_connection(self, server, client, lf):
         """
             handles both data storage and data visualization
             checks whether the network dictionary already contains server and/or
@@ -74,13 +78,11 @@ class Network():
         self.graph[new_server] = tmp
 
         # draw connection and keep track of it
-        self.add_edge(new_client, new_server)
+        self.add_edge(new_client, new_server, lf)
 
         # keep track of events in order to delete them
         self.servers_history.append(new_server)
 
-        for event in self.servers_history:
-            print("servers history: "+str(event))
         print("debug printing graph")
         print(self.graph)
 
@@ -88,16 +90,15 @@ class Network():
         print("------------------remove clicked----------------------")
         tmp = None
 
+        # is there still something to delete?
+        if len(self.servers_history)<=0:
+            raise ValueError("No more entries to delete")
+
         # flatten values
         tmp_values = []
         for x in self.graph.values():
             tmp_values.extend(x)
 
-        # is there still something to delete?
-        if len(self.servers_history)<=0:
-            raise ValueError("No more entries to delete")
-
-            # if this is any client
         tmp = self.graph[self.servers_history[-1]]
         last = tmp[-1]
         if tmp_values.count(last) == 1:
@@ -116,8 +117,7 @@ class Network():
                 del self.graph[lonely]
             del lonely
         tmp.pop()
-        self.servers_history.pop()
-        self.pop_edge()
+        self.pop_edge(self.canvas, self.servers_history.pop(), last)
         del tmp
         for event in self.servers_history:
             print("servers history: "+str(event))
