@@ -22,10 +22,9 @@ class EngageServer(engage_pb2_grpc.TestServicer):
         if target:
             lib = CDLL("../client/liblclient.so")
             lib.start.argtypes = [c_char_p, c_int]
-            lib.start.restype = c_float
+            lib.start.restype = c_double
             target = c_char_p(target.encode('utf-8'))
             result = lib.start(target, lifetime)
-            lib.free_results()
         else:
             result = call("../server/server", shell=True)
         return result
@@ -51,14 +50,12 @@ server.add_insecure_port('[::]:50051')
 server.start()
 
 def closing(*args):
-    with open("log", "a") as log:
-        log.write("gracefully stopping the server")
     server.stop(0)
     sys.exit(0)
 
-
 signal(SIGINT, closing)
 signal(SIGTERM, closing)
+
 # since server.start() will not block,
 # a sleep-loop is added to keep alive
 try:
