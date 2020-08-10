@@ -10,15 +10,16 @@
 #include <errno.h>
 #include "queue.h"
 
-#define MAX_BUFFER 16
+#define INFO_BUFFER 16
 #define SEND_CHUNK 4*1024
 #define PORT 8080
 #define SA struct sockaddr
-#define BACKLOG 10  // holds a pool of maximum open ports
+#define BACKLOG 8  // holds a pool of maximum open ports
 #define TIMEOUT 10  // sec
-#define MAX_JOBS 10
+#define QUEUE_SIZE 8
 #define THREAD_POOL_SIZE 4
-#define WIN_TIME 1 // sec for each host
+#define WIN_TIME 1 // sec for each connection
+#define CONNECTED (-1) // lifetime value before first contact
 
 // shared data structure
 struct Queue *q;
@@ -27,57 +28,62 @@ struct Queue *q;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond_var = PTHREAD_COND_INITIALIZER;
 
-int test_client(int *sockfd, FILE *logfd, char* lifetime){
+int test_client(int *sockfd, FILE *logfd, int lifetime){
   int sent = 0;
 
-  struct timeval elapsed;
+  struct timeval elapsed = {WIN_TIME, 0}; // 1 sec
   fd_set orig_set, copy_set;
-  int total_sent = 0;
-  int lt = atoi(lifetime);
   char *chunk = malloc(SEND_CHUNK * sizeof(char));
   int rv = 0; // returning value for select
 
   FD_ZERO(&orig_set);
   FD_ZERO(&copy_set);
-  FD_SET(sockfd, &orig_set);
-
-  elapsed = {WIN_TIME, 0}; // 1 sec
+  FD_SET(*sockfd, &orig_set);
 
   /*
-    start sending chunks to the client until select will return the timeout,
-    which indicates that the current time frame to test the current client has
-    passed and its socket fd must be re-enqueued
+  *  start sending chunks to the client until select will return the timeout,
+  *  which indicates that the current time frame to test the current client has
+  *  passed and its socket fd must be re-enqueued
   */
   while(1){
+    // FD_ZERO(&copy_set);
+    // FD_SET(*sockfd, &copy_set);
     copy_set = orig_set;
-    rv = select(FD_SETSIZE, copy_set, NULL ,NULL, &elapsed);
+    memset(chunk, 0, SEND_CHUNK * sizeof(char));
+
+    rv = select(FD_SETSIZE, NULL, &copy_set, NULL, &elapsed);
     if(rv < 0){
       fprintf(logfd,"ERROR: server select() failed..\n");
       return EXIT_FAILURE;
     } else if (rv == 0){
-      pthread_mutex_lock(&mutex);
-      enqueue(q, *sockfd, lt);
-      // fprintf(logfd , "from main thread\n");
-      // print_queue(logfd, q);
-      pthread_cond_signal(&cond_var);
-      pthread_mutex_unlock(&mutex);
+      // fprintf(logfd, "the second is over or the client closed the connection\n");
       break;
-    }
-    memset(chunk, 0, SEND_CHUNK * sizeof(char));
-    if((sent = send(*sockfd, chunk, SEND_CHUNK*sizeof(char), 0)) < 0){
-      if(errno == EAGAIN || errno == EWOULDBLOCK){
-        fprintf(logfd, "send would block, maybe..\n");
-        break;
+    } else if(FD_ISSET(*sockfd, &copy_set)){
+      if((sent = send(*sockfd, chunk, SEND_CHUNK*sizeof(char), 0)) < 0){
+        if(errno == EAGAIN || errno == EWOULDBLOCK){
+          fprintf(logfd, "send would block, maybe..\n");
+          // continue;
+        } else {
+          fprintf(logfd, "sending chunk error\n");
+        }
       } else {
-        fprintf(logfd, "sending chunk error\n");
+        // total_sent += sent;
       }
-    } else {
-      // fprintf(logfd, "%d bytes were sent\n", sent);
-      total_sent += sent;
     }
+    FD_CLR(*sockfd, &copy_set);
   }
+  // fprintf(logfd, "%d bytes were sent\n", sent);
   free(chunk);
-  return total_sent;
+  return EXIT_SUCCESS;
+}
+
+// last communication with client, so that we can avoid giving it a timeout
+void *terminate_client(int *sockfd, FILE *logfd){
+  fprintf(logfd, "terminating client with socket number: %d\n", *sockfd);
+  char *terminator = malloc(SEND_CHUNK * sizeof(char));
+  memset(terminator, 1, SEND_CHUNK * sizeof(char));
+  fprintf(logfd, "terminator returned %ld\n", send(*sockfd, terminator, SEND_CHUNK*sizeof(char), 0));
+  free(terminator);
 }
 
 /*
@@ -85,50 +91,50 @@ int test_client(int *sockfd, FILE *logfd, char* lifetime){
 *  the response back.
 *  PARAM: file descriptor of opened socket
 */
-void communicate(int *sockfd, FILE *logfd){
-  char *buff = malloc(MAX_BUFFER * sizeof(char));
-  int bytes_transferred  = 0;
+int get_lifetime(int *sockfd, FILE *logfd){
+  char *buff = malloc(INFO_BUFFER * sizeof(char));
+  int bytes_transferred, expected_lifetime = 0;
 
   // fill buffer with zeros
-  memset(buff, 0, MAX_BUFFER*sizeof(char));
+  memset(buff, 0, INFO_BUFFER*sizeof(char));
 
-  // read the message from client to assess its readiness
-  bytes_transferred = recv(*sockfd, buff, MAX_BUFFER*sizeof(char), 0);
+  // read the message from client to assess we received the lifetime
+  bytes_transferred = recv(*sockfd, buff, INFO_BUFFER*sizeof(char), 0);
   fprintf(logfd, "bytes received: %d\n", bytes_transferred);
-  fprintf(logfd, "content recevied: %s\n", buff);
-
-  // the last iteration we break early by sending an exit message
-  // to the server, which terminates the communication
-  // if(buff[0]==1)
-  //   break;
-
-  // receive the expected timelife for this connection
-
-  if(strcmp(buff, "ready") == 0){
-    bytes_transferred = test_client(sockfd, logfd, buff);
-  } else {
-    fprintf(logfd, "client was not ready\n");
-  }
-  fprintf(logfd, "bytes sent: %d\n", bytes_transferred);
+  fprintf(logfd, "content received: %s\n", buff);
+  expected_lifetime = atoi(buff);
   free(buff);
+  // receive the expected span of life for this connection
+  return (expected_lifetime) ? expected_lifetime : CONNECTED;
 }
 
 // main thread function, each thread in the pool will loop through trying to get the lock
 // and one will wait on a conditional variable to be signaled, meaning there is
 // a job to dequeue
 void *thread_func(void *output){
-  int active_fd = 0;
+  struct Node *active_fd;
   while(1){
     pthread_mutex_lock(&mutex);
     pthread_cond_wait(&cond_var, &mutex);
     active_fd = dequeue(q);
     pthread_mutex_unlock(&mutex);
-    if(active_fd != 0){
-      // make the socket non-blocking
-      fcntl(active_fd, F_SETFL, O_NONBLOCK);
-      // start the actual communication process
-      communicate(&active_fd, (FILE *)output);
+    fprintf((FILE *)output, "dequeued fd: %d\n", active_fd->socket_fd);
+    fprintf((FILE *)output, "with lifetime: %d\n", active_fd->lifetime_left);
+    if(active_fd->lifetime_left < 0){
+      // ask the client for how long it wants to be tested for
+      active_fd->lifetime_left = get_lifetime(&(active_fd->socket_fd), (FILE *)output);
+    } else if(active_fd->lifetime_left == 0){
+      terminate_client(&(active_fd->socket_fd), (FILE *)output);
+      continue;
+    } else {
+      test_client(&(active_fd->socket_fd), (FILE *)output, active_fd->lifetime_left);
+      active_fd->lifetime_left--;
     }
+    pthread_mutex_lock(&mutex);
+    enqueue(q, active_fd->socket_fd, active_fd->lifetime_left);
+    fprintf((FILE *) output , "from separated thread, re-enqueuing\n");
+    pthread_cond_signal(&cond_var);
+    pthread_mutex_unlock(&mutex);
   }
 }
 
@@ -139,7 +145,7 @@ int main(){
 
   struct sockaddr_in servaddr, client;
   pthread_t thread_pool[THREAD_POOL_SIZE];
-  q = createQueue(MAX_JOBS);
+  q = createQueue(QUEUE_SIZE);
   //local copy of list, cause select is disruptive
   fd_set master_read;
   // temporary file descriptor list for select()
@@ -147,16 +153,16 @@ int main(){
 
   // open a new fd instead of using stdout and stderr
   logfd = fopen("../server/log/server_log.txt", "w+");
+  // logfd = stdout;
   if(logfd == NULL){
-    printf("ERROR: log file opening failed..\n");
+    // printf("ERROR: log file opening failed..\n");
     return EXIT_FAILURE;
   }
-
   // socket create and verification
   master_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
   if (master_socket_fd == -1) {
       fprintf(logfd , "ERROR: socket creation failed...\n");
-      return EXIT_SUCCESS;
+      return EXIT_FAILURE;
   }
   bzero(&servaddr, sizeof(servaddr));
 
@@ -215,8 +221,13 @@ int main(){
       fprintf(logfd,"ERROR: server select() failed..\n");
       return EXIT_FAILURE;
     } else if(rt == 0){
-      fprintf(logfd, "time has expired....\n");
-      break;
+      if(is_empty(q)){
+        fprintf(logfd, "time has expired....\n");
+        break;
+      } else {
+        pthread_cond_signal(&cond_var);
+        continue;
+      }
     }
 
     /*run through the existing connections looking for data to be read*/
@@ -238,9 +249,12 @@ int main(){
           // data coming from an existing connection, we need to handle the message
           // output for parent process
           fprintf(logfd , "INFO: testing %s with fd: %d\n", inet_ntoa(client.sin_addr), i);
+          // set the socket non-blocking
+          fcntl(i, F_SETFL, O_NONBLOCK);
+          // safely enqueue
           pthread_mutex_lock(&mutex);
-          enqueue(q, i, 0);
-          // fprintf(logfd , "from main thread\n");
+          enqueue(q, i, CONNECTED);
+          fprintf(logfd , "from main thread\n");
           // print_queue(logfd, q);
           pthread_cond_signal(&cond_var);
           pthread_mutex_unlock(&mutex);
