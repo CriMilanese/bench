@@ -46,10 +46,11 @@ def add_node():
 		# prevent click bouncing
 		time.sleep(0.2)
 		if(check_entries()):
-			server_entry = [frame.entries[0].get(), str(frame.entries[1].get()+"."+frame.entries[2].get()+"."+frame.entries[3].get()+"."+frame.entries[4].get()), 0]
-			client_entry = [frame.entries[5].get(), str(frame.entries[6].get()+"."+frame.entries[7].get()+"."+frame.entries[8].get()+"."+frame.entries[9].get()), frame.entries[10].get()]
+			server_entry = [frame.entries[0].get(), str(frame.entries[1].get()+"."+frame.entries[2].get()+"."+frame.entries[3].get()+"."+frame.entries[4].get())]
+			client_entry = [frame.entries[5].get(), str(frame.entries[6].get()+"."+frame.entries[7].get()+"."+frame.entries[8].get()+"."+frame.entries[9].get())]
+			connection_lifetime = frame.entries[10].get()
 			global network
-			network.add_connection(server_entry, client_entry);
+			network.add_connection(server_entry, client_entry, connection_lifetime);
 
 	except ValueError as err:
 		feedback.config(text=err)
