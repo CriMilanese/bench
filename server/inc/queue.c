@@ -22,11 +22,11 @@ int is_empty(struct Queue* queue){
   return (queue->size == 0);
 }
 
-struct Node *enqueue(struct Queue* queue, int item, int lf){
+struct Node *enqueue(struct Queue* queue, int sfd, int lf){
   if (is_full(queue))
       return NULL;
 
-  struct Node n = {item, lf};
+  struct Node n = {sfd, lf};
   *queue->rear = n;
 
   // make it circular
@@ -70,11 +70,12 @@ struct Node *back(struct Queue* queue){
 
 // TODO: take out in production
 void print_queue(FILE* fd, struct Queue *queue){
+  if(is_empty(queue))
+    return;
   int sz = queue->size;
   fprintf(fd, "Printing the content of queue..\n");
   fprintf(fd, "size is: %d\n", sz);
   struct Node *tmp = queue->front;
-  fprintf(fd, "%d\n", (queue->front)->lifetime_left);
   for(int i=0; i<sz; i++){
     fprintf(fd, "element %d is (sfd: %d, ll: %d)\n", i, (queue->front)->socket_fd, (queue->front)->lifetime_left);
     if(queue->front == queue->tail){
