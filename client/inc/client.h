@@ -19,7 +19,7 @@ double start(char*, int);
 *  int is the user-defined timeout for the test
 *  FILE* log file descriptor
 */
-double communicate(int*, int, FILE*);
+double communicate(int*, int);
 
 /*
 * uses non blocking sockets in a select loop to keep reading until
@@ -28,6 +28,6 @@ double communicate(int*, int, FILE*);
 *  int* is the file descriptor obtained from connecting with the server
 *  FILE* log file descriptor
 */
-int recv_all(int*, FILE*);
+int recv_all(int*);
 
 #endif //CLIENT_H
