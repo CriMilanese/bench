@@ -69,17 +69,14 @@ def remove_node():
 		will take care of error handling and mutliple connections nodes
 	"""
 	try:
-		# prevents click bounces
-		time.sleep(0.2)
 		network.remove_connection()
-
 	except ValueError as err:
 		feedback.config(text=err)
 
 def show_info():
 	"""
 		provides a secondary window, displaying a more structured format for the
-		connections created and their results
+		connections created and their results if the connections were tested
 	"""
 	win_info = Toplevel(root)
 	win_info.title("Connections transcript")
@@ -170,6 +167,10 @@ def insert_entries():
 			entry.bind("<Button-1>", clear_entry)
 			entry.bind("<Key>", clear_entry)
 			frame.entries.append(entry)
+
+	# ----------- DEBUG --------------
+	fill_entries()
+	# ----------- DEBUG --------------
 
 	# this part is for the duration entry, which is not aligned with the others
 	entry = Entry(frame, bg=WHITE, justify="center")
