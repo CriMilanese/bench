@@ -1,32 +1,11 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <netdb.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/time.h>
-#include <arpa/inet.h>
-#include <fcntl.h>
-#include <pthread.h>
-#include <errno.h>
-#include "queue.h"
-
-#define INFO_BUFFER 16
-#define SEND_CHUNK 4*1024
-#define PORT 8080
-#define SA struct sockaddr
-#define BACKLOG 8  // holds a pool of maximum open ports
-#define TIMEOUT 10  // sec
-#define QUEUE_SIZE 8
-#define THREAD_POOL_SIZE 4
-#define WIN_TIME 1 // sec for each connection
-#define CONNECTED (-1) // lifetime value before first contact
+#include "chat.h"
 
 // shared data structure
 struct Queue *q;
 
-//shared mutex and conditional variable
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t cond_var = PTHREAD_COND_INITIALIZER;
+// //shared mutex and conditional variable
+// pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+// pthread_cond_t cond_var = PTHREAD_COND_INITIALIZER;
 
 int test_client(int *sockfd, FILE *logfd, int lifetime){
   int sent = 0;
@@ -82,7 +61,7 @@ void *terminate_client(int *sockfd, FILE *logfd){
   fprintf(logfd, "terminating client with socket number: %d\n", *sockfd);
   char *terminator = malloc(SEND_CHUNK * sizeof(char));
   memset(terminator, 1, SEND_CHUNK * sizeof(char));
-  fprintf(logfd, "terminator returned %ld\n", send(*sockfd, terminator, SEND_CHUNK*sizeof(char), 0));
+  send(*sockfd, terminator, SEND_CHUNK*sizeof(char), 0);
   free(terminator);
 }
 
@@ -235,7 +214,7 @@ int main(){
       // incoming connection for server
       if(FD_ISSET(i, &read_fds)){
         if(i == master_socket_fd){
-          if((newfd = accept(master_socket_fd, (struct sockaddr *)&client, &len)) == -1){
+          if((newfd = accept(master_socket_fd, (SA *)&client, &len)) == -1){
             fprintf(logfd , "ERROR: server accept() failed..\n");
             return EXIT_FAILURE;
           }
