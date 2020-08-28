@@ -5,13 +5,11 @@
     on the gui.
     # TODO: make the gui a separated process and manage the actions asynchronously
 """
-
-import os
-import sys
-import time
+from sys import path
+from time import sleep
 import re
+path.append('utils')
 import gui
-sys.path.append('utils')
 from interactions import *
 
 def play(net):
@@ -35,7 +33,7 @@ def play(net):
         for key in keys:
             target(net.edges, key, net.graph[key])
 
-        time.sleep(20)
+        sleep(20)
         for instance in all_host:
             stop_python_server(instance)
     except ValueError as err:
