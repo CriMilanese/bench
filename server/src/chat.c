@@ -1,7 +1,7 @@
 #include "chat.h"
 
 // shared data structure
-struct Queue *q;
+struct Queue *q = NULL;
 
 // //shared mutex and conditional variable
 // pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -91,7 +91,7 @@ int get_lifetime(int *sockfd, FILE *logfd){
 // and one will wait on a conditional variable to be signaled, meaning there is
 // a job to dequeue
 void *thread_func(void *output){
-  struct Node *active_fd;
+  struct Node *active_fd = NULL;
   while(1){
     pthread_mutex_lock(&mutex);
     pthread_cond_wait(&cond_var, &mutex);
@@ -120,7 +120,7 @@ void *thread_func(void *output){
 int main(){
   int master_socket_fd, len, maxfd, newfd;
   int opt = 1;
-  FILE *logfd;
+  FILE *logfd= NULL;
 
   struct sockaddr_in servaddr, client;
   pthread_t thread_pool[THREAD_POOL_SIZE];
