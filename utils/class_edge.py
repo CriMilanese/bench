@@ -1,7 +1,7 @@
 """
     the class describing a single connection between two hosts
 """
-from tkinter import LAST, Label, StringVar
+from tkinter import FIRST, Label, StringVar
 from globals import WHITE, LIGHT_BLUE, root
 from math import floor
 
@@ -19,7 +19,7 @@ class Edge():
             this is for the gui to be able to change the connection label on the fly
             as each client returns the results
         """
-        self.body = anchor.create_line(a.x, a.y, b.x, b.y, arrow=LAST)
+        self.body = anchor.create_line(a.x, a.y, b.x, b.y, arrow=FIRST)
         self.result = StringVar()
         self.label = Label(anchor, textvariable=self.result, fg=WHITE, bg=LIGHT_BLUE)
         middle = ((a.x+b.x)/2, (a.y+b.y)/2)
