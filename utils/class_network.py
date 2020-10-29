@@ -70,7 +70,18 @@ class Network():
         tmp_values = []
         for x in self.graph.values():
             tmp_values.extend(x)
+        for y in self.graph():
+            tmp_values.extend(y)
+
         tmp_values = set(tmp_values)
+
+        for key in tmp_values:
+            if key == new_server:
+                new_server = key
+            elif key == new_client:
+                key = new_client
+
+        # there is a redundant check here, but this remove cycles exploiting hashes
         if new_server in self.graph:
             for key in self.graph:
                 if key == new_server:
