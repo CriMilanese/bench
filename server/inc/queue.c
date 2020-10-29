@@ -36,7 +36,11 @@ struct Node *enqueue(struct Queue* queue, int sfd, int lf){
     queue->rear += 1;
   }
 
-  queue->size += 1;
+  /* only main thread will add to size so that when I dequeue with a thread
+   to test the fd, the size will remain the same and I can check its
+   value to declare the whole testing done */
+  if(lf < 0)
+    queue->size += 1;
   return queue->rear;
 }
 
@@ -52,8 +56,13 @@ struct Node *dequeue(struct Queue* queue){
     queue->front += 1;
   }
 
-  queue->size -= 1;
+  // queue->size -= 1;
   return item;
+}
+
+void decrease_size(struct Queue* queue){
+  if(queue->size >= 0)
+    queue->size -= 1;
 }
 
 struct Node *forefront(struct Queue* queue){
@@ -88,9 +97,8 @@ void print_queue(FILE* fd, struct Queue *queue){
 }
 
 void free_queue(struct Queue *queue){
-  // for(int i=queue->size; i>0;i--){
-  //   free(queue->head[i])
-  // }
-  free(queue->head);
-  free(queue);
+  if(queue){
+    free(queue->head);
+    free(queue);
+  }
 }

@@ -44,6 +44,13 @@ struct Node *back(struct Queue*);
 // a user needs to use this function to clean up the queue allocated memory
 void free_queue(struct Queue*);
 
+/*
+   this function has been detached so that the threads decrease the queue size
+   only when they are done testing a specific fd. This approach allows me
+   to check whether all threads are done by assessing the queue size.
+*/
+void decrease_size(struct Queue*);
+
 int is_full(struct Queue*);
 int is_empty(struct Queue*);
 void print_queue(FILE*, struct Queue*);

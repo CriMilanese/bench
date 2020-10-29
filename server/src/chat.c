@@ -104,6 +104,8 @@ void *thread_func(void *output){
       active_fd->lifetime_left = get_lifetime(&(active_fd->socket_fd), (FILE *)output);
     } else if(active_fd->lifetime_left == 0){
       terminate_client(&(active_fd->socket_fd), (FILE *)output);
+      // decrease size only when client has terminated
+      decrease_size(q);
       continue;
     } else {
       test_client(&(active_fd->socket_fd), (FILE *)output, active_fd->lifetime_left);
@@ -111,7 +113,6 @@ void *thread_func(void *output){
     }
     pthread_mutex_lock(&mutex);
     enqueue(q, active_fd->socket_fd, active_fd->lifetime_left);
-    fprintf((FILE *) output , "from separated thread, re-enqueuing\n");
     pthread_cond_signal(&cond_var);
     pthread_mutex_unlock(&mutex);
   }
@@ -209,7 +210,7 @@ int main(){
       }
     }
 
-    /*run through the existing connections looking for data to be read*/
+    // run through the existing connections looking for data to be read*/
     for(int i = 4; i <= maxfd; i++){
       // incoming connection for server
       if(FD_ISSET(i, &read_fds)){
