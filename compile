@@ -4,18 +4,18 @@
 # a unique remote execution of this file
 
 function server_side(){
+  cd "$PWD"/server/build;
   cmake -DCMAKE_BUILD_TYPE=Debug ../;
   make;
   mv server ../;
-  rm ../log/*;
 }
 
 function client_side(){
+  cd "$PWD"/client/build;
   cmake -DCMAKE_BUILD_TYPE=Debug ../;
   make;
   mv liblclient.so ../;
   mv client ../;
-  rm ../log/*;
 }
 
 function grpc(){
@@ -39,9 +39,7 @@ elif [ "$1" == "all" ]
 then
     cd grpc;
     grpc;
-    cd ../server/build;
     server_side;
-    cd ../../client/build;
     client_side;
 else
   echo 'missing or wrong argument'

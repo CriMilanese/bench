@@ -5,9 +5,7 @@
 """
 
 from tkinter import Label, Button, Toplevel, X, Canvas, Tk, Frame, Entry
-import time
 import master
-from sys import path
 from class_node import Node
 from class_network import Network
 from globals import *
@@ -131,7 +129,7 @@ def display_labels():
 	"this tool will help you calculate the maximum bandwidth\n" \
 	"available across the devices connected within your local network\n" \
 	"----------------------------------------------------------------\n" \
-	"in order to proceed, you need ssh authentication between the hosts", \
+	"in order to proceed, you need ssh passwordless authentication between the hosts", \
 	bg=BLUE, fg=GOLD).place(relx=0.1, rely=0.05, relwidth=0.8, relheight=0.15)
 	label = Label(frame, text=\
 						"user\n--------", \
@@ -148,6 +146,19 @@ def display_labels():
 	label = Label(frame, text=\
 						"CLIENT", \
 	bg=LIGHT_BLUE, fg=GOLD).place(relx=0.02, rely=0.38, relwidth=0.1, relheight=0.05)
+
+# debugging fill up
+def fill_entries():
+	frame.entries[0].insert(0, "cris")
+	frame.entries[1].insert(0, "192")
+	frame.entries[2].insert(0, "168")
+	frame.entries[3].insert(0, "1")
+	frame.entries[4].insert(0, "148")
+	frame.entries[5].insert(0, "pi")
+	frame.entries[6].insert(0, "192")
+	frame.entries[7].insert(0, "168")
+	frame.entries[8].insert(0, "1")
+	frame.entries[9].insert(0, "146")
 
 def insert_entries():
 	display_labels()

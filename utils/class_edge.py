@@ -1,5 +1,5 @@
 """
-    the class describing a single connection between two hosts
+    the class describing a single directed connection between two hosts
 """
 from tkinter import FIRST, Label, StringVar
 from globals import WHITE, LIGHT_BLUE, root

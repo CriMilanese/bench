@@ -103,14 +103,17 @@ double start(char* target_server, int lifetime){
   return result;
 }
 
-// to please compiler because I also want the exec for testing purposes
+/* to please compiler because I also want the exec for testing purposes
+*  is using the framework, the execution will start from the function loaded
+*  on gRPC, at namely "start". */
 int main(int argc, char *argv[]) {
 	char* t = argv[1];
-	char *string_result[32];
-
+	// char *string_result[32];
+	// memset(string_result, 0, 32*sizeof(char));
 	double result = start(t, 10);
-	FILE *logfd = fopen("./log/logging_info", "w+");
-	fprintf(logfd, "returning bandwidth: %f", result);
+	FILE *logfd = fopen("./log/logging_info", "a+");
+	fprintf(logfd, "-- new run --\n");
+	fprintf(logfd, "returning bandwidth: %.2f\n", result);
 	fclose(logfd);
 	return 0;
 }

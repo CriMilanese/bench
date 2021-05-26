@@ -70,8 +70,6 @@ class Network():
         tmp_values = []
         for x in self.graph.values():
             tmp_values.extend(x)
-        for y in self.graph():
-            tmp_values.extend(y)
 
         tmp_values = set(tmp_values)
 

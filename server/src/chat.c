@@ -3,10 +3,6 @@
 // shared data structure
 struct Queue *q = NULL;
 
-// //shared mutex and conditional variable
-// pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-// pthread_cond_t cond_var = PTHREAD_COND_INITIALIZER;
-
 int test_client(int *sockfd, FILE *logfd, int lifetime){
   int sent = 0;
 
@@ -36,6 +32,10 @@ int test_client(int *sockfd, FILE *logfd, int lifetime){
       return EXIT_FAILURE;
     } else if (rv == 0){
       // fprintf(logfd, "the second is over or the client closed the connection\n");
+      /* TODO:
+      *   check the elapsed value to verify whether this case was cause by the timeout
+      *   or for some other reasons.
+      */
       break;
     } else if(FD_ISSET(*sockfd, &copy_set)){
       if((sent = send(*sockfd, chunk, SEND_CHUNK*sizeof(char), 0)) < 0){
@@ -87,9 +87,11 @@ int get_lifetime(int *sockfd, FILE *logfd){
   return (expected_lifetime) ? expected_lifetime : CONNECTED;
 }
 
-// main thread function, each thread in the pool will loop through trying to get the lock
-// and one will wait on a conditional variable to be signaled, meaning there is
-// a job to dequeue
+/*
+  main thread function, each thread in the pool will loop through trying to get the lock
+  and one will wait on a conditional variable to be signaled, meaning there is
+  a job to dequeue
+*/
 void *thread_func(void *output){
   struct Node *active_fd = NULL;
   while(1){
@@ -202,15 +204,24 @@ int main(){
       return EXIT_FAILURE;
     } else if(rt == 0){
       if(is_empty(q)){
-        fprintf(logfd, "time has expired....\n");
+        fprintf(logfd, "the queue was empty when time expired....\n");
         break;
       } else {
+        /* In case no new connections are established and no events are
+        * fired that would set one of the masks for the registered fds, a timeout
+        * occurs, there might still be jobs in the queue, hence we will signal
+        * to threads that more work has to be done. */
         pthread_cond_signal(&cond_var);
         continue;
       }
     }
 
-    // run through the existing connections looking for data to be read*/
+    /* run through the existing file descriptors looking for a socket ready
+    * for reading, if the chosen one is the master socket, it indicates a new
+    * connection request coming in
+    *
+    */
+
     for(int i = 4; i <= maxfd; i++){
       // incoming connection for server
       if(FD_ISSET(i, &read_fds)){
@@ -239,7 +250,6 @@ int main(){
           pthread_cond_signal(&cond_var);
           pthread_mutex_unlock(&mutex);
           FD_CLR(i, &master_read);
-          // close(i);
         }
       }
     }
