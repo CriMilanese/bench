@@ -30,7 +30,11 @@ struct Queue* createQueue(int);
   add the socket file descriptor and its expected lifetime. It first checks whether
   the queue is full, in which case it will return NULL, otherwise it will go ahead
   and create a new Node item containg the given parameters. Enqueuing returns
-  the item just for
+  the item just for error checking.
+  @params
+    -  Pointer to the user's queue previously created
+    -  File descriptor for the current socket
+    -  The socket's lifetime value
 */
 struct Node *enqueue(struct Queue*, int, int);
 struct Node *dequeue(struct Queue*);

@@ -46,9 +46,12 @@ void *terminate_client(int*, FILE*);
 *  PARAM: file descriptor of opened socket
 */
 int get_lifetime(int*, FILE*);
-// main thread function, each thread in the pool will loop through trying to get the lock
-// and one will wait on a conditional variable to be signaled, meaning there is
-// a job to dequeue
+
+/*
+* main thread function, each thread in the pool will loop through trying to get the lock
+* and one will wait on a conditional variable to be signaled, meaning there is
+* a job to dequeue
+*/
 void *thread_func(void*);
 
 #endif
