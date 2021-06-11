@@ -9,3 +9,5 @@ config/hosts
 __pycache__
 report*
 cp.py
+server/test/**
+server/log/**

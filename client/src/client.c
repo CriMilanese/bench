@@ -13,7 +13,7 @@
 #define RECV_CHUNK_SIZE 4 * 1024
 #define PORT 8080
 #define SA struct sockaddr
-#define MAX_CONN_TRIALS 10
+#define MAX_CONN_TRIALS 5
 
 static float *results;
 
@@ -66,7 +66,7 @@ double communicate(int *sockfd, int lifespan){
 	if(bytes_transferred < 0)
 		return EXIT_FAILURE;
 	bytes_transferred = recv_all(sockfd);
-	return ((bytes_transferred)*1e6/(lifespan*1e6));
+	return (bytes_transferred/(lifespan));
 }
 
 double start(char* target_server, int lifetime){
@@ -96,7 +96,7 @@ double start(char* target_server, int lifetime){
 	}
 
 	// set the socket as non-blocking
-  fcntl(sockfd, F_SETFL, O_NONBLOCK);
+	fcntl(sockfd, F_SETFL, O_NONBLOCK);
 
 	double result = communicate(&sockfd, lifetime);
 	close(sockfd);
