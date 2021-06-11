@@ -4,27 +4,39 @@
 # a unique remote execution of this file
 
 function server_side(){
-  cd "$PWD"/server/build;
+  cd "$ROOT_DIR"/server/build;
   cmake -DCMAKE_BUILD_TYPE=Debug ../;
   make;
   mv server ../;
+  cd "$ROOT_DIR";
 }
 
 function client_side(){
-  cd "$PWD"/client/build;
+  cd "$ROOT_DIR"/client/build;
   cmake -DCMAKE_BUILD_TYPE=Debug ../;
   make;
   mv liblclient.so ../;
   mv client ../;
+  cd ../../;
+  cd "$ROOT_DIR";
 }
 
 function grpc(){
   # assumes that the user uses python virtual environments and more specifically
   # that its name is 'testing'
   # TODO: let the user input either none or its own virtual env name
-  source ~/py_envs/testing/bin/activate
+  cd "$ROOT_DIR"/grpc
+  if [ -e ~/py_envs/testing/bin/activate ]
+  then
+    source ~/py_envs/testing/bin/activate;
+  fi
   python3 -m grpc_tools.protoc -I. --python_out=../utils/ --grpc_python_out=../utils/ engage.proto;
+  cd "$ROOT_DIR"
 }
+
+#ifndef ROOT_DIR
+  export ROOT_DIR="$PWD"
+#endif
 
 if [ "$1" == "server" ]
 then
@@ -37,10 +49,11 @@ then
     grpc;
 elif [ "$1" == "all" ]
 then
-    cd grpc;
     grpc;
     server_side;
     client_side;
 else
   echo 'missing or wrong argument'
 fi
+
+#endif
